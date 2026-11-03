@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8 Reasons Why Grown Men Are Switching to The Super Supplement</title>
+<meta name="description" content="A parody listicle for a workshop demo. The Super Supplement isn't real.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Libre+Franklin:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.parody{background:var(--sand);color:var(--ink);text-align:center;font-size:var(--fs-micro);padding:var(--s1) var(--gutter);border-bottom:1px solid var(--line)}
+.bar b{color:var(--gold)}
+.hero-media{background:var(--paper);padding:0;overflow:hidden;border:1px solid var(--line)}
+.hero-media img{object-fit:contain}
+.expert{display:grid;grid-template-columns:64px 1fr;gap:var(--s2);align-items:start;margin-top:var(--s3)}
+.expert .av{width:64px;height:64px;border-radius:50%;background:var(--brand);color:#fff;font-family:var(--f-display);font-size:20px;display:grid;place-items:center}
+.expert p{margin:0}
+.expert .who{display:block;font-size:var(--fs-micro);color:var(--muted);margin-top:var(--s1);font-weight:600}
+.gifts{margin:var(--s3) 0 0;padding:0;list-style:none}
+.gifts li{display:flex;justify-content:space-between;gap:var(--s2);padding:var(--s1) 0;border-bottom:1px solid var(--line);font-size:var(--fs-small)}
+.gifts li span:last-child{white-space:nowrap;font-weight:700;color:var(--brand)}
+.gifts li.off{color:var(--muted)}
+.gifts li.off span:last-child{color:var(--muted);font-weight:600}
+.onetime{font-size:var(--fs-small);color:var(--muted);margin:var(--s3) 0 0}
+.onetime a{color:var(--ink);font-weight:600;white-space:nowrap}
+.renew{font-size:var(--fs-micro);color:var(--muted);margin:var(--s2) 0 0}
+.choice .pb{white-space:normal}
+.opts.pkgs{grid-template-columns:1fr}
+@media(min-width:720px){.opts.pkgs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.opts.pkgs{grid-template-columns:1fr}}
+@media(max-width:360px){th,td{padding-left:4px;padding-right:4px}}
+.choice.pk .lbl{padding-left:var(--s4);line-height:24px}
+.choice.pk:before{top:var(--s4)}
+.choice.mode{padding-top:var(--s2);padding-bottom:var(--s2)}
+#gift-note{margin-top:var(--s2)}
+.lbx[hidden]{display:none}
+.lbx{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--s2)}
+.lbx__bg{position:absolute;inset:0;background:rgba(28,27,25,.64)}
+.lbx__box{position:relative;background:var(--paper);max-width:480px;width:100%;max-height:calc(100vh - 32px);overflow:auto;border-radius:var(--radius);padding:var(--s3);text-align:center}
+.lbx__x{padding:0;position:absolute;top:var(--s1);right:var(--s1);width:48px;height:48px;border:0;background:none;font-size:28px;line-height:1;color:var(--ink);cursor:pointer}
+.lbx__steps{display:flex;justify-content:space-between;gap:var(--s1);list-style:none;margin:0 var(--s5) var(--s2) 0;padding:0 0 var(--s1);font-size:var(--fs-micro);font-weight:700;color:var(--muted);border-bottom:4px solid var(--line)}
+.lbx__steps li.done,.lbx__steps li.on{color:var(--ink)}
+.lbx__head{background:var(--sand);border-radius:var(--s1);padding:var(--s2)}
+.lbx__eyebrow{margin:0 auto var(--s1);font-size:var(--fs-small);font-weight:600}
+.lbx__head h2{font-size:24px;margin:0}
+.lbx__img{width:128px;height:128px;margin:var(--s2) auto 0;object-fit:contain}
+.lbx__lucky{font-family:var(--f-display);font-size:24px;margin:var(--s1) auto}
+.lbx__box p{margin-left:auto;margin-right:auto}
+.lbx__total{font-weight:700;font-size:18px}
+.lbx__total s{color:var(--muted);font-weight:600;font-size:var(--fs-small)}
+.lbx__yes{margin-top:var(--s1)}
+.lbx__no{display:block;margin:var(--s2) auto 0;background:none;border:0;font:inherit;font-size:var(--fs-small);text-decoration:underline;color:var(--ink);cursor:pointer;min-height:48px;padding:0 var(--s1)}
+.lbx__no:disabled{opacity:.7;cursor:wait}
+.lbx__status{font-size:var(--fs-small);color:var(--muted);margin:var(--s1) auto 0;min-height:24px}
+body.lbx-open{overflow:hidden}
+
+.disc{font-size:var(--fs-micro);color:var(--muted);margin-top:var(--s2)}
+</style>
+</head>
+<body>
+<div class="parody">Parody page for a workshop demo. The Super Supplement isn't real.</div>
+<div class="bar">Launch offer: <b>up to 45% off</b> one-time, or 50% off for life + free gifts when you subscribe</div>
+
+<!-- 1-3. HEADLINE + SUMMARY + CTA + TRUST STRIP (model: Grüns headline formula with parenthetical) -->
+<header class="hero band-paper" id="headline">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>8 Reasons Why Grown Men Are Switching to The Super Supplement <span class="paren">(Besides the Vertical Leap)</span></h1>
+      <p class="sub">Regular vitamins fix one thing, maybe. Then you still can't parallel park, your dog still ignores you, and you still forgot to thaw the chicken. The Super Supplement is the first daily capsule formulated to fix <b>literally everything</b>, using 1,850mg of ingredients science hasn't caught up to yet. Here's exactly why.</p>
+      <p class="proof-line"><span class="stars" aria-hidden="true">★★★★★</span> <span><b>Reviewed by our moms</b> · they said we're very special</span></p>
+    </div>
+    <div class="hero-media"><img src="img/bottle.jpg" width="1000" height="1000" alt="The Super Supplement bottle"></div>
+    <div class="hero-cta">
+      <a class="btn" href="#offer">Get Up To 45% Off →<small>Or subscribe for 50% off for life + free gifts</small></a>
+      <p class="trust-line"><b>30-day Everything-Fixed Guarantee</b> · Skip or cancel anytime · Secure Shopify checkout</p>
+    </div>
+  </div>
+</header>
+
+<!-- 4. REASONS -->
+<!-- REASON 1 -->
+<section class="band band-paper flush-top" id="reason-1">
+  <div class="wrap reason">
+    <div class="media land"><img loading="lazy" src="img/jump.jpg" width="1152" height="864" alt="Cartoon dad leaping higher than a basketball hoop while a cat stares"></div>
+    <div>
+      <span class="num">#1</span>
+      <h2>You Jump Higher. Like, Weirdly Higher.</h2>
+      <p>Most men lose about an inch of vertical every year after the age of "I used to play in high school." Our formula's 500mg of <b>Hustle Dust</b> reverses that trend so hard you'll have to start ducking under ceiling fans. Dunk on your nephew. Retrieve frisbees from roofs without a ladder. Clear the fence when the ice cream truck drives by.</p>
+      <blockquote class="quote">"Day 4 I jumped to grab a cereal box off the top shelf and kept going. The cat has not looked at me the same since."<span class="who">★★★★★ Gary T., Dayton, OH (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 2 -->
+<section class="band band-sand" id="reason-2">
+  <div class="wrap reason flip">
+    <div class="media land"><img loading="lazy" src="img/hair.jpg" width="1152" height="864" alt="Cartoon man admiring absurdly long flowing hair in a bathroom mirror"></div>
+    <div>
+      <span class="num">#2</span>
+      <h2>Your Hair Grows Longer (Even the Parts That Quit)</h2>
+      <p>200mg of <b>Confidence Peptides</b> tell every follicle on your head that it is, in fact, the main character. Customers report hair so long and luxurious it gets its own seat at dinner. Barbers have started charging by the yard. The spot on the back of your head that left in 2014? It's coming home.</p>
+      <blockquote class="quote">"I had to buy a second shower cap. Then a third. My comb filed for workers' comp."<span class="who">★★★★★ Dave R., Boise, ID (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 3 -->
+<section class="band band-paper" id="reason-3">
+  <div class="wrap reason">
+    <div class="media land"><img loading="lazy" src="img/slide.jpg" width="1152" height="864" alt="Cartoon wife laughing and patting her husband's shoulder while he holds a frozen-solid chicken"></div>
+    <div>
+      <span class="num">#3</span>
+      <h2>Your Wife Lets You Slide on Your Dumb Mistakes</h2>
+      <p>Forgot to thaw the chicken? Left one sock on the floor, directly next to the hamper? Said "I'll do it this weekend" for the 41st weekend in a row? Thanks to 750mg of <b>Main Character Energy</b>, she just laughs, pats your shoulder and says "That's okay, babe." Every time. Results may vary. Please still thaw the chicken.</p>
+      <blockquote class="quote">"He took one capsule and suddenly I think it's adorable that he loads the dishwasher like a raccoon. I don't understand it either."<span class="who">★★★★★ Linda P., Gary's wife (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 4 -->
+<section class="band band-sand" id="reason-4">
+  <div class="wrap reason flip">
+    <div class="media land"><img loading="lazy" src="img/park.jpg" width="1152" height="864" alt="Cartoon car parallel parked perfectly while a sidewalk crowd applauds"></div>
+    <div>
+      <span class="num">#4</span>
+      <h2>You Parallel Park on the First Try. With an Audience.</h2>
+      <p>No three-point turn. No "I'll just find a different spot." No pretending you meant to park four blocks away. One smooth reverse, six inches from the curb, while strangers on the sidewalk spontaneously applaud. Men in our "study" (a group chat) reported a 100% first-try rate, and one guy got a standing ovation at a Costco.</p>
+      <blockquote class="quote">"A valet asked me for tips. A VALET."<span class="who">★★★★★ Marcus J., Chicago, IL (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 5 -->
+<section class="band band-paper" id="reason-5">
+  <div class="wrap reason">
+    <div class="media land"><img loading="lazy" src="img/dog.jpg" width="1152" height="864" alt="Cartoon golden retriever saluting its owner in an armchair"></div>
+    <div>
+      <span class="num">#5</span>
+      <h2>Your Dog Finally Respects You</h2>
+      <p>For years, your dog has obeyed one person in the house, and it wasn't you. Within days of your first dose, he sits when you say sit, brings you the remote, and looks at you the way he looks at the mailman, except with admiration instead of rage. The 100mg of <b>Sigma Grindset Extract</b> works on dogs through vibes alone. Do not give it to your dog.</p>
+      <blockquote class="quote">"He saluted me. I don't know who taught him that. I'm not asking questions."<span class="who">★★★★★ Tom W., Nashville, TN (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 6 -->
+<section class="band band-sand" id="reason-6">
+  <div class="wrap reason flip">
+    <div class="media land"><img loading="lazy" src="img/lights.jpg" width="1152" height="864" alt="Cartoon driver cruising down a road lined with green traffic lights"></div>
+    <div>
+      <span class="num">#6</span>
+      <h2>Every Traffic Light Turns Green When You Pull Up</h2>
+      <p>The average driver spends roughly forever at red lights. Super Supplement users don't. 300mg of <b>Unverified Optimism Blend</b> puts you on the city's good side, so every light you approach goes green like you're in a car commercial. Bonus side effects reported: the shortest checkout line, the good parking spot, and a full phone battery at 10pm.</p>
+      <blockquote class="quote">"Got to work 22 minutes early. My boss thought I was a different guy."<span class="who">★★★★★ Kevin L., Phoenix, AZ (parody review)</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 7 -->
+<section class="band band-paper" id="reason-7">
+  <div class="wrap reason">
+    <div class="media"><img loading="lazy" src="img/facts.jpg" width="1000" height="1000" alt="Super Supplement facts label listing Hustle Dust, Confidence Peptides and more"></div>
+    <div>
+      <span class="num">#7</span>
+      <h2>Ingredients So Advanced, Science Hasn't Caught Up Yet</h2>
+      <p>Every serving is exactly one Vibe, with servings per container listed as "as many as you need." It's packed with 1,850mg of proprietary goodness, plus Pure Intention, Stardust, Resilience and Hope. No Daily Value has been established because, frankly, nobody's been brave enough to try.</p>
+      <div class="expert">
+        <div class="av" aria-hidden="true">CB</div>
+        <p>"I've studied this formula for nearly eleven minutes, and I can say with total confidence that it is a capsule."<span class="who">Dr. Chad Brickley, PhD in Vibes (self-awarded) · a parody expert</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REASON 8 (guarantee as a reason, per model pattern) -->
+<section class="band band-sand" id="reason-8">
+  <div class="wrap side">
+    <div class="head"><span class="num">#8</span><h2>The 30-Day Everything-Fixed Guarantee</h2></div>
+    <div><p>If your life isn't completely fixed within 30 days (vertical, hair, marriage, parking, dog, traffic), contact us for a 100% refund of your order. Keep the bottle. Use it as a paperweight. It's very motivational on a desk.</p></div>
+  </div>
+</section>
+
+<!-- 5. CTA after the reasons -->
+<div class="band band-tint"><div class="wrap mid-cta">
+  <p class="lead">Ready for a life where everything just works out?</p>
+  <a class="btn" href="#offer">Get Up To 45% Off →<small>Or 50% off for life when you subscribe</small></a>
+</div></div>
+
+<!-- 6. STANDARD SALES ELEMENTS: comparison + proof wall -->
+<section class="band band-paper" id="compare">
+  <div class="wrap side">
+    <div class="head"><h2>How Does Your Current Plan Compare?</h2><p class="sub">Your multivitamin is doing its best. It's just not doing this.</p></div>
+    <div><table>
+      <thead><tr><th>Fixes</th><th class="us">Super Supplement</th><th>Regular vitamin</th><th>Trying harder</th></tr></thead>
+      <tbody>
+        <tr><td>Vertical leap</td><td class="y">✓</td><td class="q">no</td><td class="q">ouch</td></tr>
+        <tr><td>Hair length</td><td class="y">✓</td><td class="q">no</td><td class="q">no</td></tr>
+        <tr><td>Wife lets it slide</td><td class="y">✓</td><td class="q">no</td><td class="q">rarely</td></tr>
+        <tr><td>First-try parallel parking</td><td class="y">✓</td><td class="q">no</td><td class="q">try 3</td></tr>
+        <tr><td>Dog respect</td><td class="y">✓</td><td class="q">no</td><td class="q">no</td></tr>
+        <tr><td>All green lights</td><td class="y">✓</td><td class="q">no</td><td class="q">no</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="band band-sand" id="reviews">
+  <div class="wrap">
+    <h2>Real Customers. Real Reviews. <span class="muted">(Neither Is Real.)</span></h2>
+    <p class="rating-row"><span class="stars" aria-hidden="true">★★★★★</span> <span>Parody reviews written for a workshop demo</span></p>
+    <div class="reviews">
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">Found the end of the tape roll on the first try</p><p>Twenty years of picking at it with my thumbnail. Gone. It just lifts right up for me now.</p><span class="who">Rob S., Tulsa, OK</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">IKEA shelf, zero leftover screws</p><p>Didn't open the instructions. Didn't need to. There's a 40% chance I'm now a Swedish engineer.</p><span class="who">Phil D., Madison, WI</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">My fantasy team went undefeated</p><p>I drafted a kicker in round one. Didn't matter. 14 and 0.</p><span class="who">Jason K., Columbus, OH</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">The grill lit on the first click</p><p>Neighbors came over to watch. One of them cried a little.</p><span class="who">Hank B., Austin, TX</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">Wife approved (genuinely)</p><p>He left the cabinet doors open again and I just closed them and smiled. Who am I?</p><span class="who">Jen M., Raleigh, NC</span></div>
+      <div class="rev"><span class="stars">★★★★☆</span><p class="t">Only 4 stars</p><p>Everything works now, which means I have nothing to complain about at Thanksgiving. Taking off a star for that.</p><span class="who">Walt G., Omaha, NE</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">Unclogged the drain by looking at it</p><p>Didn't even get the plunger out. The drain just knew.</p><span class="who">Carlos R., Tampa, FL</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">I finally understand the TV inputs</p><p>HDMI 1, 2 and 3. I know what all of them do. My kids call me for tech support now.</p><span class="who">Bill A., Spokane, WA</span></div>
+      <div class="rev"><span class="stars">★★★★★</span><p class="t">Remembered her mom's birthday</p><p>Without a reminder. I also remembered the card. Her mom hugged me for the first time since 2011.</p><span class="who">Steve N., Albany, NY</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. PACKAGE (offer modeled on swipe file "1-3-6 options" (Lifeboost): 1 / 3 / 6 tiers at 25/35/45% off with per-bottle price,
+     3 selected by default, Subscribe & Save vs One-time toggle (One-time default). Double-it lightbox modeled on get.lifeboostcoffee.com/healthy-coffee) -->
+<section class="band band-tint" id="offer">
+  <div class="wrap">
+    <div class="intro"><h2>Choose Your Super Supplement</h2><p class="sub">Save up to 45% on a one-time order, or subscribe for 50% off for life. Subscriptions on 3 and 6 bottles also come with free gifts on your first order.</p></div>
+    <div class="offer-grid">
+      <div class="offer-build">
+        <p class="step">Step 1: How do you want it?</p>
+        <div class="opts" role="radiogroup" aria-label="Purchase type">
+          <button type="button" class="choice mode on" role="radio" aria-checked="true" data-mode="once"><span><span class="cn">One-time purchase</span><span class="cd">Up to 45% off · no subscription</span></span></button>
+          <button type="button" class="choice mode" role="radio" aria-checked="false" data-mode="sub"><span><span class="cn">Subscribe &amp; Save</span><span class="cd">50% off for life + free gifts · cancel anytime</span></span></button>
+        </div>
+        <p class="step">Step 2: How many bottles?</p>
+        <div class="opts pkgs" role="radiogroup" aria-label="Bottles">
+          <button type="button" class="choice pk" role="radio" aria-checked="false" data-q="1">
+            <span class="lbl">1 BOTTLE</span><span class="pp" data-f="price"></span>
+            <span class="wr"><s data-f="was"></s><b data-f="off"></b></span><span class="pb" data-f="per"></span><span class="cd" data-f="ship"></span>
+          </button>
+          <button type="button" class="choice pk on" role="radio" aria-checked="true" data-q="3"><span class="flag">Most popular</span>
+            <span class="lbl">3 BOTTLES</span><span class="pp" data-f="price"></span>
+            <span class="wr"><s data-f="was"></s><b data-f="off"></b></span><span class="pb" data-f="per"></span><span class="cd" data-f="ship"></span>
+          </button>
+          <button type="button" class="choice pk" role="radio" aria-checked="false" data-q="6"><span class="flag">Best value</span>
+            <span class="lbl">6 BOTTLES</span><span class="pp" data-f="price"></span>
+            <span class="wr"><s data-f="was"></s><b data-f="off"></b></span><span class="pb" data-f="per"></span><span class="cd" data-f="ship"></span>
+          </button>
+        </div>
+        <div id="gift-box" hidden>
+          <p class="step">Your free gifts (Subscribe &amp; Save only)</p>
+          <ul class="gifts">
+            <li id="g-book"><span>10 MILLION Book (digital) · 3- and 6-bottle plans</span><span>FREE · $27</span></li>
+            <li id="g-work"><span>10 MILLION Workbook (digital) · 6-bottle plan</span><span>FREE · $27</span></li>
+          </ul>
+        </div>
+        <p class="onetime" id="gift-note">Free gifts come only with Subscribe &amp; Save on 3 or 6 bottles.</p>
+      </div>
+      <div class="offer-side">
+        <div class="summary">
+          <div class="media"><img id="sum-img" src="img/bottle.jpg" width="400" height="400" alt=""></div>
+          <div>
+            <p class="eb">Your selection</p>
+            <h3 id="sum-name"></h3>
+            <div class="pr"><span class="now" id="sum-price"></span><s id="sum-was"></s></div>
+            <p class="per" id="sum-per"></p>
+          </div>
+          <div class="btn-wrap">
+            <button type="button" class="btn" id="buy-btn">Add to Cart →<small id="buy-small">Secure Shopify checkout</small></button>
+          </div>
+        </div>
+        <p class="renew" id="renew"></p>
+        <p class="trust-line"><b>30-day Everything-Fixed Guarantee</b> · Secure Shopify checkout</p>
+        <div class="guar"><div class="seal">100%<br>REFUND</div><p><b>The Everything-Fixed Guarantee.</b> If your life isn't fixed in 30 days, email us for a 100% refund. No forms, no "reasons for cancellation" survey.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. FAQ -->
+<section class="band band-paper" id="faq">
+  <div class="wrap side">
+    <div class="head"><h2>Frequently Asked Questions</h2></div>
+    <div>
+      <details><summary>Why should I order now?</summary><p>One-time orders save 25% on 1 bottle, 35% on 3 and 45% on 6. Subscribers lock in 50% off for life, and the 3- and 6-bottle subscriptions include free gifts on the first order (the 10 MILLION Book, plus the Workbook on the 6-bottle plan, $27 each). Every day you wait is another red light.</p></details>
+      <details><summary>What if it doesn't fix my whole life?</summary><p>You're covered by the 30-day Everything-Fixed Guarantee. Email us within 30 days for a 100% refund.</p></details>
+      <details><summary>Will this work for me? I've tried everything.</summary><p>Have you tried everything at once, in capsule form? Exactly. Our customers include guys who can't parallel park, guys whose dogs ignore them, and guys who think "I'll do it this weekend" is a plan.</p></details>
+      <details><summary>Can I cancel or skip?</summary><p>Yes. Skip, pause or cancel your subscription anytime from your account. No phone calls, no guilt.</p></details>
+      <details><summary>Is it safe to take with coffee?</summary><p>It's a parody product, so we're legally required to say: please don't take anything based on a joke website. Talk to a real doctor about real supplements.</p></details>
+      <details><summary>Is The Super Supplement real?</summary><p>No. This is a parody page built for a marketing workshop demo. The product listing is labeled "Not A Real Product." Nothing on this page is a real health claim.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- 9. FINAL CTA -->
+<div class="band band-brand"><div class="wrap mid-cta">
+  <div><p class="lead">Somewhere, a red light is waiting for you.</p><p class="sub">Save up to 45% on a one-time order, or subscribe for 50% off for life plus free gifts on 3- and 6-bottle plans.</p></div>
+  <a class="btn" href="#offer">Get Up To 45% Off →<small>30-day Everything-Fixed Guarantee</small></a>
+</div></div>
+
+<footer>
+  <p><b>Parody page for a workshop demo. The Super Supplement isn't real.</b> All reviews, experts, ingredients and results on this page are jokes. No real person is quoted.</p>
+  <p>*These statements have not been evaluated by the Food and Drug Administration, or by anyone, really. This product is not intended to diagnose, treat, cure, or prevent any disease, bad parking, or a dog's lack of respect.</p>
+</footer>
+
+<!-- DOUBLE-IT LIGHTBOX (pre-checkout upsell, one step). Modeled on get.lifeboostcoffee.com/healthy-coffee. -->
+<div class="lbx" id="lbx" hidden>
+  <div class="lbx__bg" data-close></div>
+  <div class="lbx__box" role="dialog" aria-modal="true" aria-labelledby="lbx-h" aria-describedby="lbx-body">
+    <button type="button" class="lbx__x" data-close aria-label="Close">×</button>
+    <ol class="lbx__steps" aria-label="Progress"><li class="done">Add to Cart</li><li class="on" aria-current="step">Upgrade Options</li><li>Secure Checkout</li></ol>
+    <div class="lbx__head"><p class="lbx__eyebrow">One-Time Offer for This Order</p><h2 id="lbx-h"></h2></div>
+    <img class="lbx__img" src="img/bottle.jpg" width="160" height="160" alt="">
+    <p class="lbx__lucky">Lucky You!</p>
+    <p id="lbx-body"></p>
+    <p class="lbx__total" id="lbx-total"></p>
+    <button type="button" class="btn lbx__yes" id="lbx-yes">YES! UPGRADE MY ORDER ›</button>
+    <button type="button" class="lbx__no" id="lbx-no">No thanks, I'll pass on this one-time offer</button>
+    <p class="lbx__status" id="lbx-status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<div class="sticky"><div class="in">
+  <div class="info"><b>Up to 45% off one-time</b><br>or 50% off for life when you subscribe</div>
+  <a class="btn" href="#offer">Get Up To 45% Off →</a>
+</div></div>
+
+<script>
+/* Offer config (Matt Clark's Official Store, s.mattc.com). Every price below was checked against the real cart.
+   ONE-TIME: 1-bottle variant x qty + one code (SUPER25 / SUPER35 / SUPER45 / SUPER52), cart permalink.
+   SUBSCRIPTION: bundle variants + Recharge selling plans (50% off every order) + gift lines + SUPERGIFT3 / SUPERGIFT6, form POST to /cart/add. */
+(function(){
+var STORE='https://s.mattc.com', ONE='47870959026329', BOOK='46841814089881', WORK='46846629871769';
+var T={
+ once:{
+  1:{label:'1 bottle',qty:1,code:'SUPER25',price:35.25,was:47.00,off:'25% off',per:'$35.25 a bottle',ship:'One-time order'},
+  3:{label:'3 bottles',qty:3,code:'SUPER35',price:91.65,was:141.00,off:'35% off',per:'$30.55 a bottle',ship:'One-time order'},
+  6:{label:'6 bottles',qty:6,code:'SUPER45',price:155.10,was:282.00,off:'45% off',per:'$25.85 a bottle',ship:'One-time order'},
+  12:{label:'12 bottles',qty:12,code:'SUPER52',price:270.72,was:564.00,off:'52% off',per:'$22.56 a bottle'}
+ },
+ sub:{
+  1:{label:'1 bottle every month',variant:'47870959026329',plan:'6595707033',gifts:[],code:null,price:23.50,was:47.00,off:'50% off',per:'$23.50 a bottle',ship:'Ships every month',renew:'Renews at $23.50 every month.'},
+  3:{label:'3 bottles every 3 months',variant:'47870959059097',plan:'6595739801',gifts:[BOOK],code:'SUPERGIFT3',price:55.50,was:141.00,off:'61% off',per:'$18.50 a bottle + free gift',ship:'Ships every 3 months',renew:'Renews at $55.50 every 3 months.'},
+  6:{label:'6 bottles every 6 months',variant:'47870959091865',plan:'6595772569',gifts:[BOOK,WORK],code:'SUPERGIFT6',price:81.00,was:282.00,off:'71% off',per:'$13.50 a bottle + 2 gifts',ship:'Ships every 6 months',renew:'Renews at $81.00 every 6 months.'}
+ }
+};
+var UP={once:{1:3,3:6,6:12},sub:{1:3,3:6}};
+var COPY={
+ 'once1':{h:'SAVE 35% WHEN YOU UPGRADE TO 3 BOTTLES',b:'Upgrade now and get 3 bottles for $91.65 ($30.55 a bottle) instead of 1 bottle for $35.25.'},
+ 'once3':{h:'SAVE 45% WHEN YOU DOUBLE THE SIZE OF YOUR ORDER',b:'Double your order now: 6 bottles for $155.10 ($25.85 a bottle) instead of 3 bottles for $91.65.'},
+ 'once6':{h:'SAVE 52% WHEN YOU DOUBLE THE SIZE OF YOUR ORDER',b:'Double your order now and lock in our lowest one-time price: 12 bottles for $270.72 ($22.56 a bottle) instead of 6 bottles for $155.10.'},
+ 'sub1':{h:'SAVE 61% WHEN YOU UPGRADE TO 3 BOTTLES',b:'Get 3 bottles every 3 months for $55.50 ($18.50 a bottle) instead of 1 bottle a month for $23.50, and get the 10 MILLION Book free with your first order.'},
+ 'sub3':{h:'SAVE 71% WHEN YOU DOUBLE THE SIZE OF YOUR ORDER',b:'Get 6 bottles every 6 months for $81.00 ($13.50 a bottle) instead of 3 bottles every 3 months for $55.50, plus the 10 MILLION Workbook free on top of the Book.'}
+};
+var mode='once', q=3, busy=false, lastFocus=null, pending=null;
+function $(id){return document.getElementById(id)}
+function money(n){return '$'+n.toFixed(2)}
+function render(){
+  document.querySelectorAll('.choice.pk').forEach(function(b){
+    var t=T[mode][b.dataset.q];
+    b.querySelector('[data-f=price]').textContent=money(t.price);
+    b.querySelector('[data-f=was]').textContent=money(t.was);
+    b.querySelector('[data-f=off]').textContent=t.off;
+    b.querySelector('[data-f=per]').textContent=t.per;
+    b.querySelector('[data-f=ship]').textContent=t.ship;
+  });
+  var t=T[mode][q];
+  $('sum-name').textContent=mode==='sub'?t.label:t.label+', one-time';
+  $('sum-price').textContent=money(t.price); $('sum-was').textContent=money(t.was);
+  $('sum-per').textContent=t.per+' · '+t.off;
+  $('buy-small').textContent=mode==='sub'?'50% off for life · cancel anytime':'One-time order · secure Shopify checkout';
+  $('renew').textContent=mode==='sub'?t.renew+' Skip, pause or cancel anytime.':'';
+  $('gift-box').hidden=mode!=='sub'; $('gift-note').hidden=mode==='sub';
+  $('g-book').classList.toggle('off',q<3); $('g-work').classList.toggle('off',q<6);
+}
+function pick(sel,attr,val){document.querySelectorAll(sel).forEach(function(x){var on=x.dataset[attr]===String(val);x.classList.toggle('on',on);x.setAttribute('aria-checked',on?'true':'false')})}
+document.querySelectorAll('.choice.mode').forEach(function(b){b.addEventListener('click',function(){mode=b.dataset.mode;pick('.choice.mode','mode',mode);render()})});
+document.querySelectorAll('.choice.pk').forEach(function(b){b.addEventListener('click',function(){q=+b.dataset.q;pick('.choice.pk','q',q);render()})});
+render();
+
+function checkout(m,n){
+  if(busy)return; busy=true;
+  [$('buy-btn'),$('lbx-yes'),$('lbx-no')].forEach(function(x){x.disabled=true;x.setAttribute('aria-busy','true')});
+  $('lbx-status').textContent='Creating your cart…';
+  var t=T[m][n];
+  if(m==='once'){ window.location.href=STORE+'/cart/'+ONE+':'+t.qty+'?discount='+encodeURIComponent(t.code); return; }
+  var f=document.createElement('form');f.method='POST';f.action=STORE+'/cart/add';
+  function add(k,v){var i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;f.appendChild(i)}
+  add('items[0][id]',t.variant);add('items[0][quantity]','1');add('items[0][selling_plan]',t.plan);
+  t.gifts.forEach(function(g,k){add('items['+(k+1)+'][id]',g);add('items['+(k+1)+'][quantity]','1')});
+  add('return_to','/checkout'+(t.code?'?discount='+encodeURIComponent(t.code):''));
+  document.body.appendChild(f);f.submit();
+}
+var m=$('lbx');
+function openBox(){
+  var key=mode+q, up=UP[mode][q], from=T[mode][q], to=T[mode][up];
+  pending={mode:mode,from:q,to:up};
+  $('lbx-h').textContent=COPY[key].h; $('lbx-body').textContent=COPY[key].b;
+  $('lbx-total').innerHTML='New total: '+money(to.price)+(mode==='sub'?' today':'')+' <s>'+money(from.price)+'</s>';
+  $('lbx-status').textContent='';
+  lastFocus=document.activeElement; m.hidden=false; document.body.classList.add('lbx-open'); $('lbx-yes').focus();
+}
+function closeBox(){ if(busy)return; m.hidden=true; document.body.classList.remove('lbx-open'); if(lastFocus)lastFocus.focus(); }
+$('buy-btn').addEventListener('click',function(){ if(busy)return; if(UP[mode][q]) openBox(); else checkout(mode,q); });
+$('lbx-yes').addEventListener('click',function(){ if(pending) checkout(pending.mode,pending.to); });
+$('lbx-no').addEventListener('click',function(){ if(pending) checkout(pending.mode,pending.from); });
+m.addEventListener('click',function(e){ if(e.target.hasAttribute('data-close')) closeBox(); });
+document.addEventListener('keydown',function(e){
+  if(m.hidden)return;
+  if(e.key==='Escape'){closeBox();return}
+  if(e.key==='Tab'){var f=m.querySelectorAll('button:not([disabled])'),a=f[0],z=f[f.length-1];
+    if(!f.length){e.preventDefault();return}
+    if(e.shiftKey&&document.activeElement===a){z.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement===z){a.focus();e.preventDefault()}}
+});
+window.__offer={T:T,UP:UP};
+})();
+</script>
+
+</body>
+</html>
