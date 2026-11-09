@@ -178,7 +178,8 @@
       "<div><dt>Weekly refresh</dt><dd>" + esc(VM.weeklyRefresh) + "</dd></div>";
   }
 
-  const TABS = ["model", "explore", "creators", "shortlist", "coverage", "method"];
+  const TABS = ["model", "explore", "cross", "creators", "shortlist", "coverage", "method"];
+  const crossState = { source: "", staging: false, paid: "any", q: "" };
   function showTab(id, focusTab) {
     if (!TABS.includes(id)) id = "model";
     $$(".tab").forEach((tab) => {
@@ -693,6 +694,127 @@
       '<p class="hint">A dash means the value is not in the data. Missing view counts are left out of the mean. They are not counted as zero. The median never replaces the mean.</p>';
   }
 
+  function metricText(value) {
+    if (value == null || value === "") return "Unknown";
+    if (typeof value !== "number") return "Unknown";
+    return R.fmtInt(value);
+  }
+  function reviewedText(field) {
+    const value = field && String(field.value || "").trim();
+    const status = (field && field.status) || "pending_review";
+    if (!value && String(status).indexOf("pending") === 0) return { text: "Not reviewed yet.", pending: true };
+    if (!value) return { text: "Not recorded.", pending: true };
+    return { text: value, pending: false };
+  }
+  function verText(flag, yes, no) {
+    if (flag === true) return yes;
+    if (flag === false) return no;
+    return "Unknown";
+  }
+  function crossCardHTML(card) {
+    const url = safeUrl(card.postUrl);
+    const format = reviewedText(card.format);
+    const visual = reviewedText(card.hooks.visual);
+    const spoken = reviewedText(card.hooks.spoken);
+    const onScreen = reviewedText(card.hooks.onScreen);
+    const adapt = card.adaptation.value.trim();
+    const adaptPending = !adapt && String(card.adaptation.status).indexOf("pending") === 0;
+    const browser = card.metrics.browser;
+    const yt = card.metrics.ytDlp;
+    const metricRow = (label, value) => "<div><dt>" + label + "</dt><dd>" + esc(metricText(value)) + "</dd></div>";
+    const flags = card.contentFlags.map((flag) => '<div class="caution c-warn">' + pill("p-warn", "Caution") + "<p>" + esc(flag) + "</p></div>").join("");
+    const paidPill = card.paid.key === "paid" ? "p-paid" : card.paid.key === "unpaid" ? "p-neutral" : "p-outline";
+    const paidNote = card.paid.note ? "<p class=\"hint\">" + esc(card.paid.note) + "</p>" : "";
+    return '<article class="cross-card" data-cross-id="' + esc(card.id) + '"><div class="d-top">' +
+      pill(card.approved ? "p-fresh" : "p-outline", card.approved ? "Editorially selected" : "Not selected") +
+      pill("p-neutral", card.sourceLabel) +
+      (card.synthetic ? pill("p-warn", "Excluded: synthetic or deceptive") : "") +
+      pill(paidPill, card.paid.label) +
+      "</div>" + paidNote +
+      (card.selection.note ? "<p class=\"hint\">" + esc(card.selection.note) + "</p>" : "") +
+      "<h3>" + (card.creator ? esc(card.creator) : "Creator not recorded") + "</h3>" +
+      "<p class=\"kv\">" + (url ? extLink(url, "Open original video") : '<span class="missing">Video link missing</span>') + "</p>" +
+      "<p class=\"kv\"><b>UI date label:</b> " + esc(card.dates.postedLabel || "Unknown") +
+      (card.dates.postedSource ? " (" + esc(card.dates.postedSource) + ")" : "") + "</p>" +
+      "<p class=\"kv\"><b>yt-dlp reported time:</b> " + esc(card.dates.ytDlpAt ? fmtStamp(card.dates.ytDlpAt, true) : "Unknown") + "</p>" +
+      (card.dates.within14Basis ? "<p class=\"hint\">" + esc(card.dates.within14Basis) + "</p>" : "") +
+      "<p class=\"kv\"><b>Date and metrics:</b> " + esc(verText(card.verification.urlResolves, "URL checked", "URL not checked")) +
+      " · " + esc(card.verification.dateVerified ? "Date verified" : "Date not verified") +
+      " · " + esc(card.verification.metricsVerified ? "Metrics verified" : "Metrics not verified") +
+      ". Each opening line has its own check.</p>" +
+      (card.verification.reviewer ? "<p class=\"hint\">Reviewer: " + esc(card.verification.reviewer) + "</p>" : "") +
+      (card.cardRole ? "<p class=\"kv\"><b>Role:</b> " + esc(card.cardRole) + "</p>" : "") +
+      '<section class="d-sec"><h3>General format</h3><p class="' + (format.pending ? "missing" : "") + '">' + esc(format.text) + "</p>" +
+      (card.format.source ? '<p class="hint">' + esc(card.format.source) + "</p>" : "") + "</section>" +
+      '<section class="d-sec"><h3>How it opens</h3>' +
+      (card.reviewScope ? "<p class=\"hint\">" + esc(card.reviewScope) + "</p>" : "") +
+      '<dl class="hooks">' +
+      '<dt><span class="label">Visual</span><span class="kind-sub">' + esc(card.hooks.visual.statusLabel) + "</span></dt><dd><p class=\"" + (visual.pending ? "missing" : "") + "\">" + esc(visual.text) + "</p>" +
+      (card.hooks.visual.source ? "<p class=\"hint\">" + esc(card.hooks.visual.source) + "</p>" : "") + "</dd>" +
+      '<dt><span class="label">Audio</span><span class="kind-sub">' + esc(card.hooks.spoken.statusLabel) + "</span></dt><dd><p class=\"" + (spoken.pending ? "missing" : "") + "\">" + esc(spoken.text) + "</p>" +
+      (card.hooks.spoken.verbatim ? "<p>" + esc(card.hooks.spoken.verbatim) + "</p>" : "") +
+      (card.hooks.spoken.timestamp ? "<p class=\"hint\">" + esc(card.hooks.spoken.timestamp) + "</p>" : "") +
+      (card.hooks.spoken.source ? "<p class=\"hint\">" + esc(card.hooks.spoken.source) + "</p>" : "") + "</dd>" +
+      '<dt><span class="label">On-screen text</span><span class="kind-sub">' + esc(card.hooks.onScreen.statusLabel) + "</span></dt><dd><p class=\"" + (onScreen.pending ? "missing" : "") + "\">" + esc(onScreen.text) + "</p>" +
+      (card.hooks.onScreen.source ? "<p class=\"hint\">" + esc(card.hooks.onScreen.source) + "</p>" : "") + "</dd>" +
+      "</dl></section>" +
+      '<section class="d-sec adapt" aria-label="Proposed adaptation for Matt"><span class="label">Proposed adaptation for Matt, a draft, not a quote from the video</span><p class="big' +
+      (adaptPending ? " missing" : "") + '">' + esc(adaptPending ? "No adaptation written yet." : (adapt || "Not recorded.")) + "</p>" +
+      (card.adaptation.guardrail ? '<p class="hint">' + esc(card.adaptation.guardrail) + "</p>" : "") + "</section>" +
+      '<div class="metric-split"><section><h3 class="label">Browser-reported counts</h3><p class="hint">Not a verified ranking. ' + esc(browser.source || "No browser provenance recorded.") +
+      (browser.capturedAt ? " Captured " + esc(fmtStamp(browser.capturedAt, true)) + "." : "") + "</p><dl>" +
+      metricRow("Views", browser.views) + metricRow("Likes", browser.likes) + metricRow("Comments", browser.comments) +
+      metricRow("Shares", browser.shares) + metricRow("Saves", browser.saves) + metricRow("Unlabeled bookmark icon", browser.bookmark) +
+      "</dl></section><section><h3 class=\"label\">Public downloader metadata</h3><p class=\"hint\">yt-dlp reported these figures. Separate from the browser counts. Not a verified ranking and not an outlier multiple.</p><dl>" +
+      (yt ? metricRow("Views", yt.views) + metricRow("Likes", yt.likes) + metricRow("Comments", yt.comments) + metricRow("Reposts", yt.reposts) + metricRow("Saves", yt.saves)
+        : "<p class=\"missing\">No yt-dlp counts recorded.</p>") +
+      "</dl></section></div>" + flags +
+      (card.media.downloadStatus ? '<p class="hint">Download: ' + esc(card.media.downloadMethod || "method not recorded") + ", " + esc(card.media.downloadStatus) + ".</p>" : "") +
+      "</article>";
+  }
+  function renderCross() {
+    const niche = VM.crossNiche;
+    const coverage = R.crossNicheCoverage(niche);
+    const filtered = R.filterCrossCards(niche, crossState);
+    const quotaSources = R.CROSS_SOURCES.filter((spec) => spec.quota);
+    const search = niche.sources.tiktok_search;
+    const rows = quotaSources.map((spec) => {
+      const src = niche.sources[spec.key];
+      const count = coverage.by[spec.key];
+      return "<div><dt>" + esc(src.label) + "</dt><dd>" + count.approved + " approved of " + count.target + "</dd></div>" +
+        '<div class="indent"><dt>File status</dt><dd>' + esc(src.fileStatus || "Not collected") + "</dd></div>";
+    }).join("");
+    const searchLine = "<div><dt>" + esc(search.label) + "</dt><dd>" + coverage.by.tiktok_search.approved + " approved</dd></div>" +
+      '<div class="indent"><dt>File status</dt><dd>' + esc(search.fileStatus || "Not collected") + "</dd></div>";
+    const sourceOptions = '<option value="">All sources</option>' + R.CROSS_SOURCES.map((spec) =>
+      '<option value="' + spec.key + '"' + (crossState.source === spec.key ? " selected" : "") + ">" + esc(niche.sources[spec.key].label) + "</option>").join("");
+    const list = (cards, empty) => cards.length ? cards.map(crossCardHTML).join("") : '<p class="missing">' + empty + "</p>";
+    $("#tc-cross").textContent = String(filtered.primary.length);
+    const excluded = (niche.excluded || []).map((item) => {
+      const who = item.ids ? item.ids.join(", ") : (item.id || "Item");
+      return "<li>" + esc(who) + ": " + esc(item.reason || "Excluded") + "</li>";
+    }).join("");
+    $("#cross-root").innerHTML = '<p>' + esc(niche.disclaimer) + "</p>" +
+      '<p class="overlap-note">' + (coverage.quotaMet ? "" : "The four-source request, five from each source, is not met. Cards below are a partial delivery, not a finished set. ") +
+      (niche.loaded ? "" : "No cross-niche file is loaded. ") + esc(niche.quota.reason || "") + "</p>" +
+      '<div class="counts"><section><h3>Four requested sources</h3><dl>' + rows + "</dl>" +
+      (coverage.quotaMet ? "" : '<p class="overlap-note">Five approved cards from one source do not finish the other three. A pending or collected file status is not a completed source.</p>') +
+      "</section><section><h3>Not one of those four</h3><dl>" + searchLine + "</dl>" +
+      '<p class="overlap-note">TikTok search is not TikTok Explore. Search cards do not count toward the four-source request.</p></section></div>' +
+      (excluded ? "<h3 class=\"label\">Held out of this delivery</h3><ul>" + excluded + "</ul>" : "") +
+      '<div class="f-row" style="margin-bottom:16px"><label class="field"><span class="label">Source</span><select class="select" id="cross-source">' + sourceOptions + "</select></label>" +
+      '<label class="field"><span class="label">Paid</span><select class="select" id="cross-paid">' +
+      '<option value="any"' + (crossState.paid === "any" ? " selected" : "") + ">Any</option>" +
+      '<option value="unpaid"' + (crossState.paid === "unpaid" ? " selected" : "") + ">Not a paid ad</option>" +
+      '<option value="paid"' + (crossState.paid === "paid" ? " selected" : "") + ">Paid ads</option></select></label>" +
+      '<label class="field" style="flex:1;min-width:180px"><span class="label">Search</span><input class="input" id="cross-q" type="search" value="' + esc(crossState.q) + '" placeholder="Creator or format"></label>' +
+      '<label class="check"><input type="checkbox" id="cross-staging"' + (crossState.staging ? " checked" : "") + '> <span>Show research staging (not approved)</span></label></div>' +
+      "<h3 class=\"label\">Approved modeling list</h3>" +
+      list(filtered.primary, "No approved cross-niche cards yet. Add an approved file when the selection is final. This page does not invent examples.") +
+      (filtered.excludedSynthetic.length ? "<h3 class=\"label\">Excluded from the modeling list</h3>" + filtered.excludedSynthetic.map(crossCardHTML).join("") : "") +
+      (crossState.staging ? "<h3 class=\"label\">Research staging, not approved</h3>" + list(filtered.staging, "No staging cards in this file.") : "");
+  }
+
   function renderMethod() {
     const selfName = VM.policy && VM.policy.selfExclude ? VM.policy.selfExclude.join(", @") : "the excluded account in scan policy";
     const blocks = [
@@ -703,7 +825,8 @@
       ["Which date means what", "<ul><li><b>Published:</b> when the Reel went live, shown in America/Chicago with CST or CDT as that instant requires.</li><li><b>Recent and benchmark, picks:</b> exact days from publish time to the page-build time. Recent is 30 days or less. Benchmark is more than 30 and up to 90.</li><li><b>Recent and benchmark, explorer:</b> the same cutoffs, using each Reel's own measurement snapshot. This filter only changes what is displayed.</li><li><b>Views measured and followers measured:</b> the dates on that Reel or profile. They are not live.</li><li><b>Baseline window:</b> the 90 days before that creator's scan. Cutoff and scan time are per creator.</li><li><b>Page built:</b> when this file was generated.</li></ul>"],
       ["What public data can't tell you", "<p>Saves, retention, conversions, and whether views were organic or boosted are not in this data. Paid-partnership and collab flags are labels, not proof.</p>"],
       ["Weekly refresh", "<p>" + esc(VM.weeklyRefresh) + " The scan can prepare the next top 10. Putting the page live still waits until you are there. Marks are not part of that refresh.</p>"],
-      ["Saved and watched marks", "<p>Stored in this browser only, under reelDesk.marks.v1. They do not sync to another device. If storage is blocked, they last for this page session and the page says so.</p>"]
+      ["Saved and watched marks", "<p>Stored in this browser only, under reelDesk.marks.v1. They do not sync to another device. If storage is blocked, they last for this page session and the page says so.</p>"],
+      ["Cross-niche inspiration", "<p>Separate from the outlier pool. Browser counts and yt-dlp counts stay in different columns, with the date they were captured. A missing count stays unknown. Nothing in that section is an outlier multiple unless a baseline exists, and this desk does not invent one. TikTok search is not TikTok Explore. An empty source is not a completed source. Synthetic or deceptive clips stay off the approved list.</p>"]
     ];
     $("#method").innerHTML = blocks.map(([title, body]) => "<details><summary>" + title + '</summary><div class="body">' + body + "</div></details>").join("");
   }
@@ -821,7 +944,25 @@
     renderCreators();
     renderShortlist();
     renderCoverage();
+    renderCross();
     renderMethod();
+    $("#cross-root").addEventListener("change", (event) => {
+      if (event.target.id === "cross-source") crossState.source = event.target.value;
+      if (event.target.id === "cross-paid") crossState.paid = event.target.value;
+      if (event.target.id === "cross-staging") crossState.staging = event.target.checked;
+      renderCross();
+    });
+    $("#cross-root").addEventListener("input", (event) => {
+      if (event.target.id !== "cross-q") return;
+      crossState.q = event.target.value;
+      const pos = event.target.selectionStart;
+      renderCross();
+      const field = $("#cross-q");
+      if (field) {
+        field.focus();
+        if (pos != null) field.setSelectionRange(pos, pos);
+      }
+    });
     showTab((location.hash || "#model").slice(1));
   }
 

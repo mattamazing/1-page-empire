@@ -257,6 +257,14 @@ details.group > summary{cursor:pointer;font-weight:var(--w-bold);padding:var(--s
 .method .body{padding:0 0 var(--s5);max-width:72ch;display:flex;flex-direction:column;gap:var(--s3)}
 .method ul{margin:0;padding-left:20px}
 
+.metric-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4);margin-top:var(--s3)}
+.metric-split section{border:1px solid var(--line);border-radius:var(--r2);padding:var(--s3);min-width:0}
+.metric-split dl{margin:var(--s2) 0 0}
+.metric-split div{display:flex;justify-content:space-between;gap:var(--s3);padding:2px 0}
+.metric-split dd{margin:0;font-variant-numeric:tabular-nums}
+.cross-card{border-bottom:1px solid var(--line);padding:var(--s4) 0}
+.cross-card h3{font-size:16px;font-weight:var(--w-bold);font-style:normal}
+@media (max-width:899px){.metric-split{grid-template-columns:1fr}}
 .toast{position:fixed;left:50%;bottom:calc(var(--s5) + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--action);color:var(--action-ink);padding:10px 16px;border-radius:var(--r2);max-width:min(560px,calc(100vw - 32px));z-index:60;font-size:14px;display:none}
 .toast.show{display:block}
 .toast input{margin-top:8px;width:100%;padding:6px 8px;border-radius:var(--r1);border:0;color:#1A1A1A;background:#fff}
