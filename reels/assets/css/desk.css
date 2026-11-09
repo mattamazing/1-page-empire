@@ -60,6 +60,9 @@ main{padding:12px 0 48px}
 .view-head h2{font-size:20px;font-weight:500}
 .model-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .vlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.history-set{list-style:none}
+.set-label{margin:2px 0 0;font-size:13px;font-weight:600;color:var(--ink-2)}
+.vlist.history{display:flex;flex-direction:column}
 .tile{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
 .tile-main,.vcard{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;width:100%;align-items:center;text-align:left;background:transparent;border:0;padding:0;cursor:pointer;min-height:44px}
 .still{width:104px;height:78px;border-radius:8px;background:#1A2428;position:relative;overflow:hidden;display:block;flex:none}
@@ -84,7 +87,8 @@ main{padding:12px 0 48px}
 .btn-quiet{border-color:transparent;text-decoration:underline;font-weight:700;background:none}
 .btn[aria-pressed="true"]{background:var(--teal-soft);border-color:var(--teal);color:var(--teal);font-weight:700}
 .btn[disabled],.btn[aria-disabled="true"]{opacity:.55}
-.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;max-width:100%}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-strong);border-radius:8px;overflow:visible;max-width:100%}
+#rec-age{max-width:100%}
 .seg button{min-height:44px;border:0;border-right:1px solid var(--line);background:#fff;padding:8px 10px;cursor:pointer}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:#000;color:#fff;font-weight:700}

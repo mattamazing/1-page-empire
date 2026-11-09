@@ -820,6 +820,19 @@
     const recs = (data.recs || [])
       .map(function (item) { return toRec(item, byCode[item.shortCode], buildIso); })
       .sort(function (a, b) { return a.rank - b.rank; });
+    const history = (data.history || []).map(function (set) {
+      return {
+        label: set.set_label || "Previous picks",
+        retiredOn: set.retired_on || null,
+        retiredAt: set.retired_at_ct || null,
+        picks: (set.picks || [])
+          .map(function (item) { return toRec(item, null, buildIso); })
+          .sort(function (a, b) { return a.rank - b.rank; })
+      };
+    }).filter(function (set) { return set.picks.length; });
+    history.sort(function (a, b) {
+      return String(b.retiredAt || b.retiredOn || "").localeCompare(String(a.retiredAt || a.retiredOn || ""));
+    });
     const reels = scoredRows.map(toReel);
     const creators = (data.dir || []).map(toCreator);
     const people = (data.shortlist && data.shortlist.candidates ? data.shortlist.candidates : []).map(toShortlistPerson);
@@ -838,6 +851,7 @@
     return {
       build: data.build || { iso: null, zone: "America/Chicago" },
       recs: recs,
+      history: history,
       recsOmittedReason: data.recsOmittedReason || null,
       reels: reels,
       creators: creators,

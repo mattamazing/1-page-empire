@@ -148,7 +148,7 @@
   const range = { minRaw: R.DEFAULT_RANGE.minRaw, maxRaw: R.DEFAULT_RANGE.maxRaw };
   const exp = Object.assign({}, R.EXP_DEFAULT);
   const cre = { review: "", analysis: "", topic: "", q: "" };
-  const recState = { age: "all", hideWatched: false, sel: null };
+  const recState = { age: "all", hideWatched: false, sel: null, histCode: null };
   const crossState = { source: "", staging: false, paid: "any", q: "" };
 
   function parsedRange() { return R.parseRange(range.minRaw, range.maxRaw); }
@@ -199,12 +199,14 @@
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
-  function pickCard(rec) {
+  function pickCard(rec, scope) {
     const preview = R.pickPreview(rec);
     const rc = R.recencyFromElapsed(rec.elapsed, false);
     const saved = Store.has("saved", rec.code);
     const watched = Store.has("watched", rec.code);
-    return '<li class="tile"><button type="button" class="tile-main vcard rail-item" data-rank="' + rec.rank + '" data-open="pick" aria-current="' + (rec.rank === recState.sel) + '">' +
+    const historyCard = scope === "history";
+    const current = historyCard ? rec.code === recState.histCode : rec.rank === recState.sel;
+    return '<li class="tile"><button type="button" class="tile-main vcard rail-item" data-rank="' + rec.rank + '" data-id="' + esc(rec.code || "") + '" data-open="' + (historyCard ? "history" : "pick") + '" aria-current="' + current + '">' +
       posterHTML(rec.poster, rec.rank) +
       '<span class="tile-copy"><span class="v-title">' + esc(preview) + '</span><span class="v-meta">@' + esc(rec.handle) +
       " · " + esc(fmtStamp(rec.published, false)) + ' · <span class="xfig"><b>' + fmtX(rec.x) + '</b></span> ' +
@@ -237,6 +239,16 @@
       ", measured " + esc(fmtStamp(rec.followers_asof, true)) + ". The multiple did not set the rank.</p></details></article>";
   }
 
+  function historyPicks() {
+    return (VM.history || []).flatMap((set) => set.picks);
+  }
+  function retiredLabel(iso) {
+    if (!iso) return "";
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(iso));
+    const d = new Date(dateOnly ? iso + "T12:00:00-06:00" : iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return "Retired " + new Intl.DateTimeFormat("en-US", { timeZone: CHICAGO, month: "short", day: "numeric", year: "numeric" }).format(d);
+  }
   function visibleRecs() {
     return VM.recs.filter((rec) => {
       const key = R.recencyFromElapsed(rec.elapsed, false).key;
@@ -249,12 +261,32 @@
   function renderModel() {
     const fresh = VM.recs.filter((rec) => R.recencyFromElapsed(rec.elapsed, false).key === "fresh").length;
     const bench = VM.recs.filter((rec) => R.recencyFromElapsed(rec.elapsed, false).key === "bench").length;
-    $("#rec-age").innerHTML = [["all", "All " + VM.recs.length], ["fresh", "Recent " + fresh], ["bench", "Benchmarks " + bench]]
+    const previousCount = historyPicks().length;
+    if (recState.age === "previous" && !previousCount) recState.age = "all";
+    const segments = [["all", "All " + VM.recs.length]];
+    if (previousCount) segments.push(["previous", "Previous " + previousCount]);
+    segments.push(["fresh", "Recent " + fresh], ["bench", "Benchmarks " + bench]);
+    $("#rec-age").innerHTML = segments
       .map(([key, label]) => '<button type="button" data-age="' + key + '" aria-pressed="' + (recState.age === key) + '">' + label + "</button>").join("");
     $("#tc-model").textContent = String(VM.recs.length);
     $("#storage-note").textContent = storageLine();
+    if (recState.age === "previous") {
+      const groups = (VM.history || []).map((set) => {
+        const picks = set.picks.filter((rec) => !(recState.hideWatched && Store.has("watched", rec.code)));
+        if (!picks.length) return "";
+        const when = retiredLabel(set.retiredAt || set.retiredOn);
+        return '<li class="history-set"><p class="set-label">' + esc(set.label) + (when ? " · " + esc(when) : "") + '</p><ol class="vlist">' +
+          picks.map((rec) => pickCard(rec, "history")).join("") + "</ol></li>";
+      }).join("");
+      $("#rail").className = "vlist history";
+      $("#rail").innerHTML = groups || '<li><p class="missing">No picks in this filter. <button class="btn" type="button" id="rec-reset">Show all picks</button></p></li>';
+      const reset = $("#rec-reset");
+      if (reset) reset.onclick = () => { recState.age = "all"; recState.hideWatched = false; $("#rec-hide-watched").checked = false; renderModel(); };
+      return;
+    }
     const list = visibleRecs();
     if (!list.length) {
+      $("#rail").className = "vlist";
       $("#rail").innerHTML = '<li><p class="missing">No picks in this filter. <button class="btn" type="button" id="rec-reset">Show all picks</button></p></li>';
       const reset = $("#rec-reset");
       if (reset) reset.onclick = () => { recState.age = "all"; recState.hideWatched = false; $("#rec-hide-watched").checked = false; renderModel(); };
@@ -262,7 +294,7 @@
     }
     if (!list.some((rec) => rec.rank === recState.sel)) recState.sel = list[0].rank;
     $("#rail").className = "vlist";
-    $("#rail").innerHTML = list.map(pickCard).join("");
+    $("#rail").innerHTML = list.map((rec) => pickCard(rec)).join("");
   }
 
   function exploreCard(row) {
@@ -459,7 +491,9 @@
   function renderSaved() {
     const note = $("#storage-note-saved");
     if (note) note.textContent = storageLine();
-    const picks = VM.recs.filter((rec) => Store.has("saved", rec.code)).map(pickCard);
+    const currentCodes = new Set(VM.recs.map((rec) => rec.code));
+    const picks = VM.recs.filter((rec) => Store.has("saved", rec.code)).map((rec) => pickCard(rec))
+      .concat(historyPicks().filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "history")));
     const inspire = (VM.crossNiche.candidates || []).filter((card) => Store.has("saved", card.id || card.dedupeKey)).map(crossCard);
     const explore = VM.reels.filter((row) => Store.has("saved", row.code || row.url)).slice(0, 50).map(exploreCard);
     const html = picks.concat(inspire).concat(explore);
@@ -521,6 +555,12 @@
       const rec = VM.recs.find((item) => item.rank === rank);
       if (!rec) return;
       recState.sel = rank;
+      renderModel();
+      openSheet(pickDetail(rec));
+    } else if (kind === "history") {
+      const rec = historyPicks().find((item) => item.code === id);
+      if (!rec) return;
+      recState.histCode = rec.code;
       renderModel();
       openSheet(pickDetail(rec));
     } else if (kind === "explore") {
