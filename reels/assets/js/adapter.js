@@ -393,6 +393,35 @@
     return value == null || value === "" ? null : value;
   }
 
+  function posterUrl() {
+    for (let i = 0; i < arguments.length; i++) {
+      const value = String(arguments[i] || "");
+      if (/^data:image\//i.test(value)) return value;
+      if (/^https?:\/\//i.test(value)) return value;
+    }
+    return "";
+  }
+
+  function pickPreview(rec) {
+    const spoken = rec.hooks && rec.hooks.spoken;
+    const onScreen = rec.hooks && rec.hooks.onscreen;
+    if (spoken && spoken.text && spoken.src !== "missing" && spoken.src !== "none") return spoken.text;
+    if (onScreen && onScreen.text && onScreen.src !== "missing" && onScreen.src !== "none") return onScreen.text;
+    return rec.concept || "No hook recorded";
+  }
+
+  function inspirationPreview(card) {
+    const spoken = card.hooks.spoken;
+    const onScreen = card.hooks.onScreen;
+    const visual = card.hooks.visual;
+    if (spoken.verbatim) return { text: spoken.verbatim, statusLabel: spoken.statusLabel, kind: "spoken" };
+    if (spoken.value && spoken.status !== "pending_review") return { text: spoken.value, statusLabel: spoken.statusLabel, kind: "spoken" };
+    if (onScreen.value && onScreen.status !== "pending_review") return { text: onScreen.value, statusLabel: onScreen.statusLabel, kind: "onscreen" };
+    if (visual.value && visual.status !== "pending_review") return { text: visual.value, statusLabel: visual.statusLabel, kind: "visual" };
+    if (card.format.value) return { text: card.format.value, statusLabel: card.format.statusLabel, kind: "format" };
+    return { text: "No hook recorded", statusLabel: "", kind: "missing" };
+  }
+
   function toReel(row) {
     const elapsed = exactElapsedDays(row.publishLocal, row.snapshotLocal);
     const reel = {
@@ -400,6 +429,7 @@
       handle: row.creator,
       code: row.shortCode || null,
       url: row.url || null,
+      poster: posterUrl(row.poster, row.thumbnail, row.thumbnailUrl, row.displayUrl),
       followers: numberOrNull(row.followers),
       views: numberOrNull(row.views),
       mean: numberOrNull(row.meanViews),
@@ -437,6 +467,7 @@
       name: item.fullName || "",
       code: item.shortCode || null,
       url: item.reelUrl || (scored && scored.url) || null,
+      poster: posterUrl(item.poster, item.thumbnail, item.thumbnailUrl, scored && scored.poster, scored && scored.thumbnail, scored && scored.displayUrl),
       profileUrl: item.profileUrl || null,
       concept: conceptFromWhy(item.why),
       x: x,
@@ -603,6 +634,7 @@
         note: selection.note || ""
       },
       postUrl: raw.post_url || raw.postUrl || "",
+      poster: posterUrl(raw.poster, raw.thumbnail_url, raw.thumbnail, raw.media && (raw.media.thumbnail || raw.media.poster || raw.media.cover)),
       creator: raw.creator_handle || raw.creator || "",
       language: raw.language || "",
       discovery: {
@@ -959,6 +991,9 @@
     isSyntheticCard: isSyntheticCard,
     isApprovedCard: isApprovedCard,
     sourceDisplay: sourceDisplay,
-    modalityLabel: modalityLabel
+    modalityLabel: modalityLabel,
+    posterUrl: posterUrl,
+    pickPreview: pickPreview,
+    inspirationPreview: inspirationPreview
   };
 });
