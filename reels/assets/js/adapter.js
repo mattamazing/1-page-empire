@@ -511,6 +511,275 @@
     };
   }
 
+  const CROSS_SOURCES = [
+    { key: "cc_trends", quota: 5, label: "TikTok Creative Center, trending videos", contentType: "organic_or_mixed" },
+    { key: "tiktok_explore", quota: 5, label: "TikTok Explore", contentType: "organic" },
+    { key: "ig_reels", quota: 5, label: "Instagram Reels feed", contentType: "organic" },
+    { key: "cc_top_ads", quota: 5, label: "TikTok Creative Center, top ads (paid)", contentType: "paid_ad" },
+    { key: "tiktok_search", quota: null, label: "TikTok search", contentType: "organic" }
+  ];
+  const CROSS_DISCLAIMER = "Inspiration only. These are not verified business outliers. No own-channel multiple is computed without a baseline.";
+  const CROSS_REQUEST = "5 each from Creative Center trending videos, TikTok Explore, Instagram Reels, and TikTok top ads (20)";
+
+  function sourceSpec(key) {
+    return CROSS_SOURCES.find(function (item) { return item.key === key; }) || null;
+  }
+
+  function sourceDisplay(key, incomingLabel) {
+    if (key === "tiktok_search") return "TikTok search (not Explore, not one of the four sources)";
+    if (key === "tiktok_explore") return "TikTok Explore";
+    if (incomingLabel) return String(incomingLabel);
+    const spec = sourceSpec(key);
+    return spec ? spec.label : "Unrecognized source";
+  }
+
+  function isSyntheticCard(card) {
+    if (!card) return false;
+    if (card.synthetic === true) return true;
+    const flags = [].concat(card.content_flags || [], card.contentFlags || []);
+    return flags.some(function (flag) {
+      const text = String(flag || "").toUpperCase();
+      return text.includes("SYNTHETIC") || text.includes("DECEPTIVE") || text.includes("MANIPULATED");
+    });
+  }
+
+  function isApprovedCard(card) {
+    if (!card) return false;
+    if (card.integration_status === "approved" || card.integrationStatus === "approved") return true;
+    if (card.selection && card.selection.approved === true) return true;
+    return false;
+  }
+
+  function modalityLabel(status) {
+    if (status === "caption_track_derived") return "Caption track; audio unverified";
+    if (status === "verified_watchVideo") return "Checked against video";
+    if (!status || String(status).indexOf("pending") === 0) return "Not reviewed yet";
+    return String(status);
+  }
+
+  function blankField(field) {
+    const src = field || {};
+    const status = src.status || "pending_review";
+    return {
+      value: src.value == null ? "" : String(src.value),
+      status: status,
+      statusLabel: modalityLabel(status),
+      verifiedSpoken: status === "verified_watchVideo",
+      source: src.source || "",
+      window: src.window || "",
+      verbatim: src.verbatim_opening || "",
+      timestamp: src.timestamp || ""
+    };
+  }
+
+  function paidState(raw) {
+    const note = raw.paid_status ? String(raw.paid_status) : "";
+    const verified = !!(raw.verification && raw.verification.paid_status_verified === true);
+    if (raw.is_paid_ad === true) return { key: "paid", label: "Paid ad", note: note };
+    if (raw.is_paid_ad === false && verified) return { key: "unpaid", label: "Not a paid ad", note: note };
+    return { key: "unknown", label: "Paid status unknown", note: note };
+  }
+
+  function normalizeCrossCard(raw) {
+    const metrics = raw.metrics || {};
+    const yt = metrics.yt_dlp_reported || null;
+    const dates = raw.dates || {};
+    const discovery = raw.discovery || {};
+    const media = raw.media || {};
+    const verification = raw.verification || {};
+    const sourceKey = raw.source_key || raw.sourceKey || "";
+    const paid = paidState(raw);
+    const selection = raw.selection || {};
+    const card = {
+      id: raw.id || "",
+      sourceKey: sourceKey,
+      sourceLabel: sourceDisplay(sourceKey, null),
+      platform: raw.platform || "",
+      isPaidAd: paid.key === "paid",
+      paid: paid,
+      selection: {
+        approved: selection.approved === true,
+        approvalType: selection.approval_type || "",
+        note: selection.note || ""
+      },
+      postUrl: raw.post_url || raw.postUrl || "",
+      creator: raw.creator_handle || raw.creator || "",
+      language: raw.language || "",
+      discovery: {
+        method: discovery.method || "",
+        capturedAt: discovery.captured_at_ct || "",
+        filters: discovery.filters || "",
+        notes: discovery.notes || ""
+      },
+      dates: {
+        postedLabel: dates.posted_at || "",
+        postedSource: dates.posted_at_source || "",
+        ytDlpAt: dates.yt_dlp_timestamp_ct || "",
+        within14: dates.within_14_days == null ? null : dates.within_14_days,
+        within14Basis: dates.within_14_days_basis || ""
+      },
+      metrics: {
+        browser: {
+          views: metrics.views == null ? null : metrics.views,
+          likes: metrics.likes == null ? null : metrics.likes,
+          comments: metrics.comments == null ? null : metrics.comments,
+          shares: metrics.shares == null ? null : metrics.shares,
+          saves: metrics.saves == null ? null : metrics.saves,
+          bookmark: metrics.unlabeled_bookmark_icon_count == null ? null : metrics.unlabeled_bookmark_icon_count,
+          scope: metrics.metric_scope || "",
+          source: metrics.metric_source || "",
+          capturedAt: metrics.captured_at_ct || ""
+        },
+        ytDlp: yt ? {
+          views: yt.view_count == null ? null : yt.view_count,
+          likes: yt.like_count == null ? null : yt.like_count,
+          comments: yt.comment_count == null ? null : yt.comment_count,
+          reposts: yt.repost_count == null ? null : yt.repost_count,
+          saves: yt.save_count == null ? null : yt.save_count
+        } : null
+      },
+      media: {
+        downloadMethod: media.download_method || "",
+        downloadStatus: media.download_status || "",
+        hasLocalFile: !!media.local_video_path,
+        transcriptSource: media.transcript_source || ""
+      },
+      format: blankField(raw.format_general),
+      hooks: {
+        visual: blankField(raw.hook && raw.hook.visual),
+        spoken: blankField(raw.hook && raw.hook.spoken_audio),
+        onScreen: blankField(raw.hook && raw.hook.on_screen_text)
+      },
+      adaptation: {
+        value: raw.adaptation_for_matt && raw.adaptation_for_matt.value ? String(raw.adaptation_for_matt.value) : "",
+        status: (raw.adaptation_for_matt && raw.adaptation_for_matt.status) || "pending_review",
+        guardrail: (raw.adaptation_for_matt && raw.adaptation_for_matt.guardrail) || ""
+      },
+      dedupeKey: raw.dedupe_key || "",
+      verification: {
+        urlResolves: verification.url_resolves == null ? null : verification.url_resolves,
+        dateVerified: verification.date_verified === true,
+        metricsVerified: verification.metrics_verified === true,
+        hookVerified: verification.hook_verified === true,
+        reviewer: verification.reviewer || ""
+      },
+      reviewScope: raw.review_scope || "",
+      cardRole: raw.card_role || "",
+      contentFlags: [].concat(raw.content_flags || []),
+      suitability: raw.suitability_for_matt || "",
+      integrationStatus: raw.integration_status || "not_approved"
+    };
+    card.synthetic = isSyntheticCard(card);
+    card.approved = isApprovedCard(raw);
+    card.primary = card.approved && !card.synthetic && /^https?:\/\//i.test(card.postUrl);
+    return card;
+  }
+
+  function emptyCrossNiche(reason) {
+    const sources = {};
+    CROSS_SOURCES.forEach(function (spec) {
+      sources[spec.key] = {
+        key: spec.key,
+        label: sourceDisplay(spec.key, spec.label),
+        fileStatus: null,
+        contentType: spec.contentType,
+        quota: spec.quota
+      };
+    });
+    return {
+      loaded: false,
+      disclaimer: CROSS_DISCLAIMER,
+      generatedAt: null,
+      quota: { requested: CROSS_REQUEST, met: false, reason: reason || "No cross-niche file was provided. Empty sources are not completed." },
+      sources: sources,
+      candidates: [],
+      excluded: []
+    };
+  }
+
+  function normalizeCrossNiche(raw) {
+    if (!raw || raw.loaded === false) return emptyCrossNiche(raw && raw.quota_status && raw.quota_status.reason);
+    const sources = {};
+    CROSS_SOURCES.forEach(function (spec) {
+      const incoming = (raw.sources || {})[spec.key] || {};
+      sources[spec.key] = {
+        key: spec.key,
+        label: sourceDisplay(spec.key, incoming.label),
+        fileStatus: incoming.status || null,
+        contentType: incoming.content_type || spec.contentType,
+        quota: spec.quota,
+        url: incoming.url || ""
+      };
+    });
+    Object.keys(raw.sources || {}).forEach(function (key) {
+      if (sources[key]) return;
+      const incoming = raw.sources[key] || {};
+      sources[key] = {
+        key: key,
+        label: sourceDisplay(key, incoming.label),
+        fileStatus: incoming.status || null,
+        contentType: incoming.content_type || "",
+        quota: null,
+        url: incoming.url || ""
+      };
+    });
+    const quota = raw.quota_status || {};
+    return {
+      loaded: true,
+      disclaimer: raw.disclaimer || CROSS_DISCLAIMER,
+      generatedAt: raw.generated_at_ct || null,
+      quota: {
+        requested: quota.requested || CROSS_REQUEST,
+        met: quota.met === true,
+        reason: quota.reason || "",
+        detail: quota
+      },
+      sources: sources,
+      candidates: (raw.candidates || []).map(normalizeCrossCard),
+      excluded: raw.excluded || []
+    };
+  }
+
+  function crossNicheCoverage(model) {
+    const niche = model || emptyCrossNiche();
+    const primary = niche.candidates.filter(function (card) { return card.primary; });
+    const by = {};
+    CROSS_SOURCES.forEach(function (spec) {
+      const approved = primary.filter(function (card) { return card.sourceKey === spec.key; }).length;
+      by[spec.key] = {
+        approved: approved,
+        target: spec.quota,
+        complete: spec.quota ? approved >= spec.quota : false
+      };
+    });
+    const fourComplete = CROSS_SOURCES.filter(function (spec) { return spec.quota; }).every(function (spec) {
+      return by[spec.key].complete;
+    });
+    return { by: by, fourComplete: fourComplete, quotaMet: niche.quota.met === true && fourComplete };
+  }
+
+  function filterCrossCards(model, state) {
+    const niche = model || emptyCrossNiche();
+    state = state || {};
+    const q = String(state.q || "").trim().toLowerCase();
+    function match(card) {
+      if (state.source && card.sourceKey !== state.source) return false;
+      if (state.paid === "paid" && card.paid.key !== "paid") return false;
+      if (state.paid === "unpaid" && card.paid.key !== "unpaid") return false;
+      if (q) {
+        const hay = [card.creator, card.format.value, card.adaptation.value, card.id].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }
+    const matched = niche.candidates.filter(match);
+    return {
+      primary: matched.filter(function (card) { return card.primary; }),
+      excludedSynthetic: matched.filter(function (card) { return card.approved && card.synthetic; }),
+      staging: matched.filter(function (card) { return !card.approved; })
+    };
+  }
+
   function toViewModel(embedded) {
     const data = embedded || {};
     const buildIso = (data.build && data.build.iso) || null;
@@ -551,7 +820,8 @@
       coverage: data.coverage || {},
       policy: data.policy || null,
       weeklyRefresh: WEEKLY_REFRESH_TEXT,
-      baselineStrip: BASELINE_STRIP_TEXT
+      baselineStrip: BASELINE_STRIP_TEXT,
+      crossNiche: normalizeCrossNiche(data.crossNiche)
     };
   }
 
@@ -680,6 +950,15 @@
     inFollowerRange: inFollowerRange,
     hookGrounded: hookGrounded,
     mapBaseline: mapBaseline,
-    baselineLabel: baselineLabel
+    baselineLabel: baselineLabel,
+    CROSS_SOURCES: CROSS_SOURCES,
+    CROSS_DISCLAIMER: CROSS_DISCLAIMER,
+    normalizeCrossNiche: normalizeCrossNiche,
+    crossNicheCoverage: crossNicheCoverage,
+    filterCrossCards: filterCrossCards,
+    isSyntheticCard: isSyntheticCard,
+    isApprovedCard: isApprovedCard,
+    sourceDisplay: sourceDisplay,
+    modalityLabel: modalityLabel
   };
 });
