@@ -7,6 +7,8 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const CHICAGO = "America/Chicago";
   const TABS = ["model", "explore", "cross", "shortlist", "saved", "creators", "coverage", "method"];
+  let platform = "instagram";
+  const ytState = { seg: "mine" };
 
   function fmtStamp(iso, withTime) {
     if (!iso) return "—";
@@ -53,8 +55,8 @@
       '<button class="icon-btn" type="button" data-mark="saved" data-id="' + esc(id) + '" aria-pressed="' + saved + '" aria-label="' + (saved ? "Saved" : "Save") + '">' +
       saveIcon(saved) + "</button></div>";
   }
-  function detailActions(url, id) {
-    const watch = safeUrl(url) ? extLink(url, "Watch") : '<span class="btn" aria-disabled="true">No link</span>';
+  function detailActions(url, id, watchLabel) {
+    const watch = safeUrl(url) ? extLink(url, watchLabel || "Watch") : '<span class="btn" aria-disabled="true">No link</span>';
     const saved = Store.has("saved", id);
     const watched = Store.has("watched", id);
     return '<div class="v-actions">' + watch +
@@ -168,6 +170,8 @@
     $("#built-line").textContent = "Built " + fmtStamp(VM.build.iso, true);
     const updated = $("#picks-updated");
     if (updated) updated.textContent = updatedLine(VM.build.iso);
+    const ytUpdated = $("#yt-updated");
+    if (ytUpdated) ytUpdated.textContent = updatedLine(VM.build.iso);
     const snaps = VM.baselines.map((b) => b.snapshotLocal).filter(Boolean).sort();
     $("#freshness").innerHTML =
       "<div><dt>Page built</dt><dd>" + esc(fmtStamp(VM.build.iso, true)) + "</dd></div>" +
@@ -506,8 +510,114 @@
       .concat(historyPicks().filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "history")));
     const inspire = (VM.crossNiche.candidates || []).filter((card) => Store.has("saved", card.id || card.dedupeKey)).map(crossCard);
     const explore = VM.reels.filter((row) => Store.has("saved", row.code || row.url)).slice(0, 50).map(exploreCard);
-    const html = picks.concat(inspire).concat(explore);
+    const videos = savedYoutube();
+    const html = picks.concat(inspire).concat(explore).concat(videos);
     $("#saved-root").innerHTML = html.length ? '<div class="vlist">' + html.join("") + "</div>" : '<p class="missing">Nothing saved in this browser yet.</p>';
+  }
+
+  function youtubeLists() {
+    const tube = VM.youtube || {};
+    return {
+      mine: tube.mine || [],
+      peers: tube.peers || [],
+      broad: tube.broad || [],
+      big: tube.big || []
+    };
+  }
+  function allYoutube() {
+    const lists = youtubeLists();
+    return lists.mine.concat(lists.peers, lists.broad, lists.big);
+  }
+  function youtubeById() {
+    const map = new Map();
+    allYoutube().forEach((video) => { if (video.id && !map.has(video.id)) map.set(video.id, video); });
+    return map;
+  }
+  function ytMarkId(video) { return "yt:" + video.id; }
+  function fmtCompact(value) {
+    if (value == null || Number.isNaN(Number(value))) return "—";
+    const n = Number(value);
+    if (n >= 1000000) return (n / 1000000).toFixed(n >= 10000000 ? 0 : 1).replace(/\.0$/, "") + "M";
+    if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K";
+    return String(Math.round(n));
+  }
+  function fmtMedian(value) {
+    if (value == null || Number.isNaN(Number(value))) return "—";
+    const rounded = Math.round(Number(value) * 100) / 100;
+    return String(rounded) + "x median";
+  }
+  function ytWhen(published) {
+    if (!published) return "Date not recorded";
+    const iso = /^\d{4}-\d{2}-\d{2}$/.test(published) ? published + "T12:00:00-06:00" : published;
+    const days = R.exactElapsedDays(iso, VM.build && VM.build.iso);
+    const when = fmtStamp(published, false);
+    if (days == null) return when;
+    return when + " · " + Math.max(0, Math.round(days)) + "d";
+  }
+  function ytStill(video) {
+    const src = /^data:image\//i.test(String(video.poster || "")) || safeUrl(video.poster) ? String(video.poster) : "";
+    const img = src ? '<img alt="" src="' + esc(src) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : "";
+    return '<span class="yt-still">' + img + '<span class="still-fallback" aria-hidden="true"></span><span class="yt-x">' + esc(fmtMedian(video.medianX)) + "</span></span>";
+  }
+  function ytCard(video) {
+    const id = ytMarkId(video);
+    const saved = Store.has("saved", id);
+    const watched = Store.has("watched", id);
+    const hook = video.hook ? esc(video.hook) : "No hook recorded.";
+    return '<li class="yt-card"><button type="button" class="yt-main" data-open="youtube" data-id="' + esc(video.id) + '">' +
+      ytStill(video) +
+      '<span class="yt-title">' + esc(video.title || "Untitled") + "</span>" +
+      '<span class="v-meta">' + esc(video.channel || "Channel not recorded") + " · " + esc(fmtCompact(video.subs)) + " subs · " +
+      esc(fmtCompact(video.views)) + " views · " + esc(ytWhen(video.published)) +
+      (saved ? pill("p-fresh", "Saved") : "") + (watched ? pill("p-neutral", "Watched") : "") + "</span>" +
+      '<span class="yt-hook' + (video.hook ? "" : " missing") + '">' + hook + "</span></button>" +
+      '<div class="tile-actions">' + (safeUrl(video.url) ? extLink(video.url, "Open") : '<span class="btn" aria-disabled="true">No link</span>') +
+      '<button class="icon-btn" type="button" data-mark="saved" data-id="' + esc(id) + '" aria-pressed="' + saved + '" aria-label="' + (saved ? "Saved" : "Save") + '">' +
+      saveIcon(saved) + "</button></div></li>";
+  }
+  function ytDetail(video) {
+    const id = ytMarkId(video);
+    const twist = video.aiTwist ? '<section class="adapt"><span class="label">AI twist</span><p>' + esc(video.aiTwist) + "</p></section>" : "";
+    return '<article class="detail"><h2>' + esc(video.title || "Untitled") + "</h2>" +
+      "<p class=\"v-meta\">" + esc(video.channel || "Channel not recorded") + " · " + esc(fmtCompact(video.subs)) + " subs · " +
+      esc(fmtCompact(video.views)) + " views · " + esc(ytWhen(video.published)) + " · <b>" + esc(fmtMedian(video.medianX)) + "</b></p>" +
+      detailActions(video.url, id, "Open") +
+      '<p class="label">Hook</p><p class="big">' + (video.hook ? esc(video.hook) : '<span class="missing">No hook recorded.</span>') + "</p>" +
+      twist + "</article>";
+  }
+  function savedYoutube() {
+    const seen = new Set();
+    return allYoutube().filter((video) => {
+      const id = ytMarkId(video);
+      if (seen.has(id) || !Store.has("saved", id)) return false;
+      seen.add(id);
+      return true;
+    }).map(ytCard);
+  }
+  function renderYoutube() {
+    const lists = youtubeLists();
+    const labels = [["mine", "My winners"], ["peers", "Peers"], ["broad", "Broad business"], ["big", "Big channels"]];
+    if (!lists[ytState.seg]) ytState.seg = "mine";
+    $("#yt-seg").innerHTML = labels.map(([key, label]) =>
+      '<button type="button" data-yt="' + key + '" aria-pressed="' + (ytState.seg === key) + '">' + label + " " + lists[key].length + "</button>").join("");
+    const list = lists[ytState.seg] || [];
+    $("#yt-list").innerHTML = list.length ? list.map(ytCard).join("") : '<li><p class="missing">No videos in this list.</p></li>';
+  }
+  function setPlatform(next) {
+    platform = next === "youtube" ? "youtube" : "instagram";
+    const yt = platform === "youtube";
+    $("#plat-ig").setAttribute("aria-pressed", String(!yt));
+    $("#plat-yt").setAttribute("aria-pressed", String(yt));
+    $("#tablist").hidden = yt;
+    $("#p-youtube").hidden = !yt;
+    if (yt) {
+      $$('[role="tabpanel"]').forEach((panel) => { panel.hidden = true; });
+      if ($("#sheet") && !$("#sheet").hidden) closeSheet();
+      renderYoutube();
+      return;
+    }
+    const id = (location.hash || "#model").slice(1);
+    showTab(TABS.includes(id) ? id : "model");
   }
 
   function renderCreators() {
@@ -585,6 +695,9 @@
     } else if (kind === "creator") {
       const row = findCreator(id);
       if (row) openSheet(creatorDetail(row));
+    } else if (kind === "youtube") {
+      const video = youtubeById().get(id);
+      if (video) openSheet(ytDetail(video));
     }
   }
 
@@ -675,6 +788,7 @@
       if (!$("#p-saved").hidden) renderSaved();
       if (!$("#p-explore").hidden) renderExplorer();
       if (!$("#p-cross").hidden) renderCross();
+      if (platform === "youtube") renderYoutube();
       return;
     }
     const card = event.target.closest("[data-open]");
@@ -695,6 +809,14 @@
   });
   window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+  $("#plat-ig").addEventListener("click", () => setPlatform("instagram"));
+  $("#plat-yt").addEventListener("click", () => setPlatform("youtube"));
+  $("#yt-seg").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-yt]");
+    if (!button) return;
+    ytState.seg = button.dataset.yt;
+    renderYoutube();
+  });
   $("#rec-age").addEventListener("click", (event) => { const button = event.target.closest("[data-age]"); if (!button) return; recState.age = button.dataset.age; renderModel(); });
   $("#rec-hide-watched").addEventListener("change", (event) => { recState.hideWatched = event.target.checked; renderModel(); });
   $("#rail").addEventListener("keydown", (event) => {

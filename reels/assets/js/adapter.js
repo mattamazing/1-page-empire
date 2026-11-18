@@ -875,7 +875,8 @@
       policy: data.policy || null,
       weeklyRefresh: WEEKLY_REFRESH_TEXT,
       baselineStrip: BASELINE_STRIP_TEXT,
-      crossNiche: normalizeCrossNiche(data.crossNiche)
+      crossNiche: normalizeCrossNiche(data.crossNiche),
+      youtube: data.youtube || { mine: [], peers: [], broad: [], big: [] }
     };
   }
 
