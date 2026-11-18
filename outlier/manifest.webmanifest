@@ -1,0 +1,8 @@
+{
+  "name": "Outlier Research",
+  "short_name": "Outlier",
+  "start_url": "/outlier/",
+  "display": "standalone",
+  "background_color": "#E7E9EC",
+  "theme_color": "#1A1A1A"
+}
