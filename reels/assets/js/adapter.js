@@ -317,7 +317,9 @@
     const checked = item.asrCorrected === true;
     let spoken;
     let spokenVisuals = [];
-    if (asr && String(asr).trim()) {
+    if (/^no speech\b/i.test(String(asr || "").trim())) {
+      spoken = { src: "none", note: String(asr).trim() };
+    } else if (asr && String(asr).trim()) {
       const parsed = parseSpoken(asr, checked);
       spoken = parsed.hook;
       spokenVisuals = parsed.visuals;

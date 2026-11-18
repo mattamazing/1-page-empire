@@ -156,8 +156,18 @@
     return Store.persistent ? "Saved and watched stay in this browser only." : "Marks won't be kept: this browser blocks local storage.";
   }
 
+  function updatedLine(iso) {
+    if (!iso) return "Updated —";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "Updated —";
+    const date = new Intl.DateTimeFormat("en-US", { timeZone: CHICAGO, month: "short", day: "numeric", year: "numeric" }).format(d);
+    const time = new Intl.DateTimeFormat("en-US", { timeZone: CHICAGO, hour: "numeric", minute: "2-digit" }).format(d);
+    return "Updated " + date + ", " + time + " CT";
+  }
   function renderFreshness() {
     $("#built-line").textContent = "Built " + fmtStamp(VM.build.iso, true);
+    const updated = $("#picks-updated");
+    if (updated) updated.textContent = updatedLine(VM.build.iso);
     const snaps = VM.baselines.map((b) => b.snapshotLocal).filter(Boolean).sort();
     $("#freshness").innerHTML =
       "<div><dt>Page built</dt><dd>" + esc(fmtStamp(VM.build.iso, true)) + "</dd></div>" +
