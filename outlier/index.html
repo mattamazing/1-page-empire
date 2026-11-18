@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Outlier Research</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="app.66f83ba2f9.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form id="login-form" class="login-card">
+    <p class="eyebrow">Matt Clark</p>
+    <h1>Outlier Research</h1>
+    <p class="hint">Instagram Reels and YouTube long-form, for the people on this account.</p>
+    <label>Email<input class="input" name="email" type="email" autocomplete="username" required></label>
+    <label>Password<input class="input" name="password" type="password" autocomplete="current-password" required></label>
+    <p class="hint">You stay signed in on this browser until you log out.</p>
+    <p id="login-error" class="err" hidden></p>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+  </form>
+</div>
+<div id="app" class="canvas" hidden>
+  <header class="top">
+    <div class="wrap top-row">
+      <div class="brand">
+        <h1>Outlier Research</h1>
+        <p class="built" id="built-line"></p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-compact" id="saved-btn" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Saved</span></button>
+        <details class="about">
+          <summary class="btn btn-compact"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>About</span></summary>
+          <p class="about-pop hint" id="about-copy"></p>
+        </details>
+        <div class="menu">
+          <button class="btn btn-compact" id="account-btn" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Account</span></button>
+          <div id="account-menu" class="menu-pop" hidden>
+            <p id="who"></p>
+            <form id="pw-form">
+              <label>Current<input class="input" name="current" type="password" autocomplete="current-password"></label>
+              <label>New<input class="input" name="next" type="password" autocomplete="new-password"></label>
+              <button class="btn" type="submit">Change password</button>
+              <p id="pw-msg" class="hint"></p>
+            </form>
+            <button class="btn" id="admin-btn" type="button" hidden>Admin</button>
+            <button class="btn" id="logout-btn" type="button">Log out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="wrap platform" role="group" aria-label="Platform">
+    <button type="button" id="plat-ig" aria-pressed="true">Instagram</button>
+    <button type="button" id="plat-yt" aria-pressed="false">YouTube</button>
+  </div>
+  <nav class="wrap dock" id="ig-nav" aria-label="Instagram">
+    <button class="tab" type="button" data-ig="picks" aria-pressed="true">Picks</button>
+    <button class="tab" type="button" data-ig="explore">Explore</button>
+    <button class="tab" type="button" data-ig="inspire">Inspire</button>
+    <button class="tab" type="button" data-ig="shortlist">Shortlist</button>
+  </nav>
+  <main class="wrap" id="main"></main>
+</div>
+<div id="sheet" class="sheet" hidden>
+  <button class="sheet-backdrop" type="button" data-close aria-label="Close details"></button>
+  <div class="sheet-panel" role="dialog" aria-modal="true">
+    <div class="sheet-bar"><button class="btn" type="button" data-close>Close</button></div>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+<script src="app.21a0112034.js"></script>
+</body>
+</html>
