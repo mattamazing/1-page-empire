@@ -6,7 +6,7 @@
   const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const CHICAGO = "America/Chicago";
-  const TABS = ["model", "explore", "cross", "shortlist", "saved", "creators", "coverage", "method"];
+  const TABS = ["model", "explore", "cross", "shortlist", "creators", "coverage", "method"];
   let platform = "instagram";
   const ytState = { seg: "mine" };
 
@@ -170,8 +170,11 @@
     $("#built-line").textContent = "Built " + fmtStamp(VM.build.iso, true);
     const updated = $("#picks-updated");
     if (updated) updated.textContent = updatedLine(VM.build.iso);
+    const tube = VM.youtube || {};
     const ytUpdated = $("#yt-updated");
-    if (ytUpdated) ytUpdated.textContent = updatedLine(VM.build.iso);
+    if (ytUpdated) ytUpdated.textContent = updatedLine(VM.build.iso) + (tube.window_label ? " | " + tube.window_label : "");
+    const ytNote = $("#yt-note");
+    if (ytNote) ytNote.textContent = tube.multiplier_note || "";
     const snaps = VM.baselines.map((b) => b.snapshotLocal).filter(Boolean).sort();
     $("#freshness").innerHTML =
       "<div><dt>Page built</dt><dd>" + esc(fmtStamp(VM.build.iso, true)) + "</dd></div>" +
@@ -180,8 +183,31 @@
       "<div><dt>Weekly refresh</dt><dd>" + esc(VM.weeklyRefresh) + "</dd></div>";
   }
 
+  function showSaved() {
+    platform = platform === "youtube" ? "youtube" : "instagram";
+    const btn = $("#saved-top");
+    if (btn) btn.setAttribute("aria-pressed", "true");
+    if ($("#sheet") && !$("#sheet").hidden) closeSheet();
+    $("#p-youtube").hidden = true;
+    $("#tablist").hidden = platform === "youtube";
+    $$(".tab").forEach((tab) => {
+      tab.setAttribute("aria-selected", "false");
+      tab.tabIndex = -1;
+    });
+    $$('[role="tabpanel"]').forEach((panel) => { panel.hidden = panel.id !== "p-saved"; });
+    renderSaved();
+    if (location.hash.slice(1) !== "saved") history.replaceState(null, "", "#saved");
+  }
   function showTab(id, focusTab) {
+    if (id === "saved") { showSaved(); return; }
     if (!TABS.includes(id)) id = "model";
+    platform = "instagram";
+    const savedBtn = $("#saved-top");
+    if (savedBtn) savedBtn.setAttribute("aria-pressed", "false");
+    $("#plat-ig").setAttribute("aria-pressed", "true");
+    $("#plat-yt").setAttribute("aria-pressed", "false");
+    $("#tablist").hidden = false;
+    $("#p-youtube").hidden = true;
     if ($("#sheet") && !$("#sheet").hidden) closeSheet();
     $$(".tab").forEach((tab) => {
       const on = tab.dataset.tab === id;
@@ -193,7 +219,6 @@
     if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
     if (id === "explore") renderExplorer();
     if (id === "creators") renderCreators();
-    if (id === "saved") renderSaved();
     if (id === "cross") renderCross();
   }
 
@@ -504,7 +529,7 @@
 
   function renderSaved() {
     const note = $("#storage-note-saved");
-    if (note) note.textContent = storageLine();
+    if (note) note.textContent = "Instagram and YouTube share this list. " + storageLine();
     const currentCodes = new Set(VM.recs.map((rec) => rec.code));
     const picks = VM.recs.filter((rec) => Store.has("saved", rec.code)).map((rec) => pickCard(rec))
       .concat(historyPicks().filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "history")));
@@ -605,14 +630,17 @@
   }
   function setPlatform(next) {
     platform = next === "youtube" ? "youtube" : "instagram";
+    const savedBtn = $("#saved-top");
+    if (savedBtn) savedBtn.setAttribute("aria-pressed", "false");
     const yt = platform === "youtube";
     $("#plat-ig").setAttribute("aria-pressed", String(!yt));
     $("#plat-yt").setAttribute("aria-pressed", String(yt));
     $("#tablist").hidden = yt;
     $("#p-youtube").hidden = !yt;
+    if ($("#sheet") && !$("#sheet").hidden) closeSheet();
     if (yt) {
       $$('[role="tabpanel"]').forEach((panel) => { panel.hidden = true; });
-      if ($("#sheet") && !$("#sheet").hidden) closeSheet();
+      if (location.hash !== "#youtube") history.replaceState(null, "", "#youtube");
       renderYoutube();
       return;
     }
@@ -807,7 +835,13 @@
     else if (event.key === "End") next = tabs.length - 1;
     if (next != null) { event.preventDefault(); showTab(tabs[next].dataset.tab, true); }
   });
-  window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+  window.addEventListener("hashchange", () => {
+    const id = location.hash.slice(1);
+    if (id === "youtube") setPlatform("youtube");
+    else showTab(id);
+  });
+  const savedTop = $("#saved-top");
+  if (savedTop) savedTop.addEventListener("click", () => showSaved());
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
   $("#plat-ig").addEventListener("click", () => setPlatform("instagram"));
   $("#plat-yt").addEventListener("click", () => setPlatform("youtube"));
@@ -849,7 +883,9 @@
     renderCreators();
     renderCoverage();
     renderMethod();
-    showTab((location.hash || "#model").slice(1));
+    const start = (location.hash || "#model").slice(1);
+    if (start === "youtube") setPlatform("youtube");
+    else showTab(start);
   }
   boot();
 })();

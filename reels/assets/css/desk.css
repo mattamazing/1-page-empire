@@ -44,10 +44,12 @@ button,input,select{font:inherit;color:inherit}
 .missing{color:var(--muted);font-style:italic}
 .top{border-bottom:1px solid var(--line)}
 .top-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
+.top-actions{display:flex;align-items:center;gap:8px;flex:none}
 h1{font-size:18px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;line-height:1.2}
 .built{font-size:12px;color:var(--muted);margin-top:2px}
-.about{font-size:13px}
-.about summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
+.about{font-size:13px;position:relative}
+.about summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;white-space:nowrap}
+.top-actions .btn{white-space:nowrap}
 .freshness{display:grid;gap:8px;margin:0 0 12px}
 .freshness dt{font:700 10px/1.2 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .freshness dd{margin:2px 0 0}
@@ -162,6 +164,10 @@ main{padding:12px 0 48px}
 .toast input{width:100%;margin-top:8px;color:#1A1A1A}
 .err{color:var(--danger);font-size:13px;font-weight:700}
 .line{font-size:13px;color:var(--ink-2);margin:4px 0 10px}
+@media (max-width:560px){
+  .top-row{flex-wrap:wrap}
+  .top-actions{width:100%;justify-content:flex-start}
+}
 @media (max-width:899px){
   .f-toggle{display:flex;justify-content:space-between;gap:8px;align-items:center}
   .filters:not(.open) .f-body{display:none}
