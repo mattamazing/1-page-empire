@@ -213,6 +213,10 @@
     return { body: body.replace(/\s+/g, " ").trim(), parens: parens, semiTail: semiTail };
   }
 
+  function tidyFragment(text) {
+    return String(text || "").replace(/\s+/g, " ").replace(/\s+\.$/, "").trim();
+  }
+
   function classifyParen(text) {
     if (/foley|sound only/i.test(text)) return "foley";
     if (/dynamic text/i.test(text)) return "onscreen-note";
@@ -242,7 +246,7 @@
       raw = raw.slice(lead[0].length).trim();
     }
     const outer = extractOuter(raw);
-    let text = outer.body;
+    let text = tidyFragment(outer.body);
     let verbatim = false;
     const quoted = text.match(/^["“]([\s\S]*?)["”]$/);
     if (quoted) {
@@ -279,8 +283,7 @@
 
   function parseOnScreen(onSrc) {
     let raw = String(onSrc).trim().replace(/^no spoken[^.]*\.\s*/i, "");
-    const label = raw.match(/^on-screen text:\s*/i);
-    if (label) raw = raw.slice(label[0].length);
+    raw = raw.replace(/^on-screen (?:text|labels):\s*/i, "");
     const split = extractOuter(raw, true);
     let visuals = [];
     let collected;
@@ -295,6 +298,7 @@
       main = whole.body;
     }
     visuals = visuals.concat(collected.visuals);
+    main = tidyFragment(main);
     const quoted = main.match(/^["“]([\s\S]*?)["”]$/);
     const hook = { src: "video" };
     if (quoted && !/labels:|ending:/i.test(main)) {
@@ -317,8 +321,9 @@
     const checked = item.asrCorrected === true;
     let spoken;
     let spokenVisuals = [];
-    if (/^no speech\b/i.test(String(asr || "").trim())) {
-      spoken = { src: "none", note: String(asr).trim() };
+    const asrText = String(asr || "").trim();
+    if (/^no speech\b/i.test(asrText) || /^no clear spoken\b/i.test(asrText) || /on-screen headline as the verified open/i.test(asrText)) {
+      spoken = { src: "none", note: asrText };
     } else if (asr && String(asr).trim()) {
       const parsed = parseSpoken(asr, checked);
       spoken = parsed.hook;
@@ -346,8 +351,9 @@
       spoken.note = closing;
     }
     const visuals = spokenVisuals.concat(onVisuals).filter(Boolean);
-    const visual = visuals.length
-      ? { src: "video", text: visuals.join(" "), verbatim: false }
+    const pieces = visuals.map(tidyFragment).filter(Boolean);
+    const visual = pieces.length
+      ? { src: "video", text: pieces.join(" · "), verbatim: false }
       : { src: "missing" };
     return { spoken: spoken, onscreen: onscreen, visual: visual };
   }
@@ -962,8 +968,10 @@
     const parts = [hook.text, hook.note, hook.ts].filter(Boolean);
     return parts.every(function (part) {
       if (sources.some(function (source) { return source && String(source).includes(part); })) return true;
-      return String(part).split(". ").every(function (piece) {
-        return sources.some(function (source) { return source && String(source).includes(piece); });
+      return String(part).split(/\s*·\s*|\.\s+/).every(function (piece) {
+        const bit = piece.trim();
+        if (!bit) return true;
+        return sources.some(function (source) { return source && String(source).includes(bit); });
       });
     });
   }
