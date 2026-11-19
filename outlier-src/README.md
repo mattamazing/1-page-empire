@@ -100,3 +100,29 @@ Cookie `outlier_session` is HttpOnly, Secure, SameSite=Lax, Path=/outlier, Max-A
 | DELETE | `/outlier/api/admin/users` | admin, body `{email, confirm:true}` |
 
 The last enabled admin cannot be deleted, disabled, or demoted.
+
+
+## Fast data load
+
+The bundle JSON no longer contains image bytes. Posters are `/outlier/api/img/<sha256>` and the bytes live in the same `outlier-data` store as `img:<sha256>`.
+
+Build from the staged Reels folder (writes the slim gzip and an image directory):
+
+```bash
+node tools/build-outlier-bundle.mjs --reels-dir /path/to/staged-data --out outlier-data-bundle.json.gz --images outlier-images
+```
+
+Or split the current live bundle (sha 3a122ca9…):
+
+```bash
+node tools/split-outlier-images.mjs --from-bundle outlier-data-bundle.json.gz --out outlier-data-bundle.json.gz --images outlier-images
+```
+
+Seed Blobs before deploying the new functions, or the page will have no pictures:
+
+```bash
+netlify blobs:set outlier-data bundle outlier-data-bundle.json.gz
+for f in outlier-images/*; do netlify blobs:set outlier-data "img:$(basename "$f")" "$f"; done
+```
+
+`/outlier/api/data` sends `Cache-Control: private, no-cache` and a strong ETag. A repeat load sends `If-None-Match` and gets 304. `/outlier/api/data/version` is the same ETag in a few dozen bytes. Images use `private, max-age=31536000, immutable`.

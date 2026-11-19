@@ -1,5 +1,5 @@
 import { gunzipSync } from "node:zlib";
-import { bundleBytes, fail, json, listUsers, openStore, readJson, requireUser, saveKey } from "./outlier-lib.mjs";
+import { bundleBytes, fail, json, listUsers, openStore, readJson, requireUser, rowsFromStore, saveKey, writeRows } from "./outlier-lib.mjs";
 
 export const config = { path: "/outlier/api/saves" };
 
@@ -61,16 +61,8 @@ export default async function handler(req) {
   const email = gate.session.user.email;
   const store = openStore("outlier-saves");
   if (req.method === "GET") {
-    const listed = await store.list();
-    const mine = [];
-    const all = [];
-    for (const blob of listed.blobs || []) {
-      const row = await store.get(blob.key, { type: "json" });
-      if (!row) continue;
-      all.push(row);
-      if (row.email === email) mine.push(row);
-    }
-    all.sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
+    const all = (await rowsFromStore(store)).slice().sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
+    const mine = all.filter((row) => row.email === email);
     return json({ saves: await named(all), mine: mine.map((row) => `${row.platform}:${row.item_id}`) });
   }
   const body = await readJson(req);
@@ -83,6 +75,8 @@ export default async function handler(req) {
     const existing = await store.get(key, { type: "json" });
     if (existing && existing.email !== email) return fail(403, "That save belongs to someone else.");
     await store.delete(key);
+    const rows = (await rowsFromStore(store)).filter((row) => !(row.email === email && row.platform === platform && row.item_id === itemId));
+    await writeRows(store, rows);
     return json({ ok: true });
   }
   if (req.method === "PUT" || req.method === "POST") {
@@ -96,6 +90,9 @@ export default async function handler(req) {
       saved_at: (existing && existing.saved_at) || new Date().toISOString(),
     };
     await store.setJSON(key, row);
+    const rows = (await rowsFromStore(store)).filter((item) => !(item.email === email && item.platform === platform && item.item_id === itemId));
+    rows.push(row);
+    await writeRows(store, rows);
     return json({ save: row });
   }
   return fail(405, "Use GET, PUT, or DELETE.");
