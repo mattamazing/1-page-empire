@@ -248,9 +248,10 @@ function renderSaved() {
     const own = row.email === state.me.email;
     return `<article class="yt-card">${poster(row.poster, "yt")}<h2 class="title">${esc(row.title || row.url)}</h2><p class="meta">${esc(row.channel || "")}</p><div class="card-foot">${personRow(row)}${cardMenu(key, own, own || state.me.role === "admin")}</div>${noteBlock(key, row.note)}</article>`;
   }).join("");
+  const who = (setName) => `<div class="filter-group"><span class="filter-label" aria-hidden="true">Who</span><div class="chips" role="group" aria-label="Who saved">${ownerChips(setName)}</div></div>`;
   const filters = ideas
-    ? `<div class="chips" aria-label="Who saved">${ownerChips("owners")}</div><div class="chips"><button class="chip" data-pf="all" aria-pressed="${state.platformFilter === "all"}">All</button><button class="chip" data-pf="yt" aria-pressed="${state.platformFilter === "yt"}">YouTube long-form</button><button class="chip" data-pf="ig" aria-pressed="${state.platformFilter === "ig"}">Instagram Reels</button></div>`
-    : `<button class="btn add-toggle" type="button" data-show-url>+ Add from URL</button><form id="url-form" class="url-row"><input class="input" name="url" placeholder="youtube.com/watch or youtu.be" aria-label="YouTube URL"><button class="btn btn-primary" type="submit">Add</button></form><div class="chips" aria-label="Who saved">${ownerChips("packOwners")}</div>`;
+    ? `<div class="filters">${who("owners")}<div class="filter-group"><span class="filter-label" aria-hidden="true">Type</span><div class="chips" role="group" aria-label="Type"><button class="chip" data-pf="all" aria-pressed="${state.platformFilter === "all"}">All</button><button class="chip" data-pf="yt" aria-pressed="${state.platformFilter === "yt"}">YouTube long-form</button><button class="chip" data-pf="ig" aria-pressed="${state.platformFilter === "ig"}">Instagram Reels</button></div></div></div>`
+    : `<button class="btn add-toggle" type="button" data-show-url>+ Add from URL</button><form id="url-form" class="url-row"><input class="input" name="url" placeholder="youtube.com/watch or youtu.be" aria-label="YouTube URL"><button class="btn btn-primary" type="submit">Add</button></form><div class="filters">${who("packOwners")}</div>`;
   const cards = ideas ? ideaCards : packCards;
   return `<div class="view-head"><div><h2>Saved</h2><div class="seg"><button class="chip" type="button" data-saved-tab="ideas" aria-pressed="${ideas}">Video ideas</button><button class="chip" type="button" data-saved-tab="packaging" aria-pressed="${!ideas}">Packaging</button></div></div></div>${filters}<div class="list yt-grid">${cards || `<p class="hint">${ideas ? "Nothing saved yet." : "No packaging ideas yet."}</p>`}</div>`;
 }
@@ -269,6 +270,8 @@ function render() {
   if (adminBtn) adminBtn.hidden = state.me.role !== "admin";
   $("#plat-ig").setAttribute("aria-pressed", String(state.platform === "ig" && location.hash !== "#saved" && location.hash !== "#admin"));
   $("#plat-yt").setAttribute("aria-pressed", String(state.platform === "yt" && location.hash !== "#saved" && location.hash !== "#admin"));
+  $("#saved-btn").setAttribute("aria-pressed", String(location.hash === "#saved"));
+  if ($("#admin-btn")) $("#admin-btn").setAttribute("aria-pressed", String(location.hash === "#admin"));
   const savedMode = location.hash === "#saved";
   const adminMode = location.hash === "#admin";
   $("#ig-nav").hidden = state.platform !== "ig" || savedMode || adminMode;
@@ -321,7 +324,7 @@ $("#login-form").addEventListener("submit", async (event) => {
   }
 });
 $("#account-btn").addEventListener("click", () => {
-  const admin = state.me.role === "admin" ? `<button class="btn" id="admin-btn" type="button">Admin</button>` : "";
+  const admin = state.me.role === "admin" ? `<button class="btn" id="admin-btn" type="button" aria-pressed="${location.hash === "#admin"}">Admin</button>` : "";
   openSheet(`<h2>Account</h2><p class="who" id="who">${esc(state.me.name || state.me.email)} · ${esc(state.me.role)}</p><form id="pw-form"><label>Current<input class="input" name="current" type="password" autocomplete="current-password"></label><label>New<input class="input" name="next" type="password" autocomplete="new-password"></label><button class="btn" type="submit">Change password</button><p id="pw-msg" class="hint"></p></form>${admin}<button class="btn" id="logout-btn" type="button">Log out</button>`);
 });
 $("#saved-btn").addEventListener("click", () => { location.hash = "#saved"; });
