@@ -24,9 +24,14 @@
     }
     return new Intl.DateTimeFormat("en-US", opts).format(d);
   }
-  function fmtX(x) {
+  function fmtX(x, median) {
     if (x == null || Number.isNaN(Number(x))) return "—";
-    return Number(x).toFixed(2) + "×";
+    return Number(x).toFixed(2) + (median ? "× median" : "×");
+  }
+  function tierBadge(tier) {
+    const labels = { top10: "Top 10", strong: "Strong", rising: "Rising" };
+    if (!labels[tier]) return "";
+    return '<span class="tier tier-' + tier + '">' + labels[tier] + "</span>";
   }
   function pill(cls, text) {
     return '<span class="pill ' + cls + '">' + esc(text) + "</span>";
@@ -150,7 +155,7 @@
   const range = { minRaw: R.DEFAULT_RANGE.minRaw, maxRaw: R.DEFAULT_RANGE.maxRaw };
   const exp = Object.assign({}, R.EXP_DEFAULT);
   const cre = { review: "", analysis: "", topic: "", q: "" };
-  const recState = { age: "all", hideWatched: false, sel: null, histCode: null };
+  const recState = { age: "all", hideWatched: false, sel: null, histCode: null, candTier: "all", candCode: null };
   const crossState = { source: "", staging: false, paid: "any", q: "" };
 
   function parsedRange() { return R.parseRange(range.minRaw, range.maxRaw); }
@@ -244,11 +249,13 @@
     const saved = Store.has("saved", rec.code);
     const watched = Store.has("watched", rec.code);
     const historyCard = scope === "history";
-    const current = historyCard ? rec.code === recState.histCode : rec.rank === recState.sel;
-    return '<li class="tile"><button type="button" class="tile-main vcard rail-item" data-rank="' + rec.rank + '" data-id="' + esc(rec.code || "") + '" data-open="' + (historyCard ? "history" : "pick") + '" aria-current="' + current + '">' +
-      posterHTML(rec.poster, rec.rank) +
-      '<span class="tile-copy"><span class="v-title">' + esc(preview) + '</span><span class="v-meta">@' + esc(rec.handle) +
-      " · " + esc(fmtStamp(rec.published, false)) + ' · <span class="xfig"><b>' + fmtX(rec.x) + '</b></span> ' +
+    const candCard = scope === "cands";
+    const current = historyCard ? rec.code === recState.histCode : candCard ? rec.code === recState.candCode : rec.rank === recState.sel;
+    const open = historyCard ? "history" : candCard ? "cands" : "pick";
+    return '<li class="tile"><button type="button" class="tile-main vcard rail-item" data-rank="' + (rec.rank == null ? "" : rec.rank) + '" data-id="' + esc(rec.code || "") + '" data-open="' + open + '" aria-current="' + current + '">' +
+      posterHTML(rec.poster, candCard ? null : rec.rank) +
+      '<span class="tile-copy"><span class="v-title">' + esc(preview) + '</span><span class="v-meta">' + (candCard ? tierBadge(rec.tier) + " " : "") +
+      '<span class="nw">@' + esc(rec.handle) + " · " + esc(fmtStamp(rec.published, false)) + '</span><span class="xfig"><b>' + fmtX(rec.x, !historyCard && rec.median) + '</b></span> ' +
       pill(rc.key === "fresh" ? "p-fresh" : "p-bench", rc.short) +
       (rec.paid ? pill("p-paid", "Paid") : "") +
       (saved ? pill("p-fresh", "Saved") : "") + (watched ? pill("p-neutral", "Watched") : "") +
@@ -265,9 +272,10 @@
       return "<dt><span class=\"label\">" + label + "</span></dt><dd><p" + (missing ? ' class="missing"' : "") + ">" + esc(body) + "</p>" +
         (hook.note ? '<p class="hint">' + esc(hook.note) + "</p>" : "") + "</dd>";
     };
-    return '<article class="detail"><p class="label">Pick ' + rec.rank + "</p><h2>" + esc(R.pickPreview(rec)) + "</h2>" +
+    const pickLabel = rec.rank == null ? "" : '<p class="label">Pick ' + rec.rank + "</p>";
+    return '<article class="detail">' + pickLabel + "<h2>" + esc(R.pickPreview(rec)) + "</h2>" +
       "<p class=\"v-meta\">@" + esc(rec.handle) + " · " + esc(fmtStamp(rec.published, true)) +
-      ' <span class="xfig"><b>' + fmtX(rec.x) + "</b><span>own avg</span></span></p>" +
+      ' <span class="xfig"><b>' + fmtX(rec.x, rec.median) + "</b>" + (rec.median ? "" : "<span>own avg</span>") + "</span></p>" +
       detailActions(rec.url, rec.code) +
       '<section class="adapt"><span class="label">Your adaptation, a draft idea, not a quote</span><p class="big">' + esc(rec.adapt || "Not recorded for this pick.") + "</p></section>" +
       "<h3>Why it's worth modeling</h3><p>" + esc(rec.why || "Not recorded.") + "</p>" +
@@ -309,6 +317,7 @@
       .map(([key, label]) => '<button type="button" data-age="' + key + '" aria-pressed="' + (recState.age === key) + '">' + label + "</button>").join("");
     $("#tc-model").textContent = String(VM.recs.length);
     $("#storage-note").textContent = storageLine();
+    renderCandidates();
     if (recState.age === "previous") {
       const groups = (VM.history || []).map((set) => {
         const picks = set.picks.filter((rec) => !(recState.hideWatched && Store.has("watched", rec.code)));
@@ -334,6 +343,31 @@
     if (!list.some((rec) => rec.rank === recState.sel)) recState.sel = list[0].rank;
     $("#rail").className = "vlist";
     $("#rail").innerHTML = list.map((rec) => pickCard(rec)).join("");
+  }
+  function renderCandidates() {
+    const root = $("#cands");
+    if (!root) return;
+    const all = (VM.candidates || []).filter((rec) => rec.tier !== "top10" && !rec.inTop10);
+    if (!all.length || recState.age === "previous") {
+      root.hidden = true;
+      root.innerHTML = "";
+      return;
+    }
+    const counts = { strong: 0, rising: 0 };
+    all.forEach((rec) => { if (counts[rec.tier] != null) counts[rec.tier] += 1; });
+    const chips = [["all", "All " + all.length]];
+    if (counts.strong) chips.push(["strong", "Strong " + counts.strong]);
+    if (counts.rising) chips.push(["rising", "Rising " + counts.rising]);
+    if (!chips.slice(1).length) recState.candTier = "all";
+    if (recState.candTier !== "all" && !counts[recState.candTier]) recState.candTier = "all";
+    const shown = recState.candTier === "all" ? all : all.filter((rec) => rec.tier === recState.candTier);
+    const names = { strong: "Strong", rising: "Rising" };
+    const empty = shown.length ? "" : '<p class="missing">No ' + (names[recState.candTier] || "matching") + " picks this week.</p>";
+    const row = chips.length > 1 ? '<div class="seg" role="group" aria-label="Tier">' + chips.map(([key, label]) =>
+      '<button type="button" data-cand="' + key + '" aria-pressed="' + (recState.candTier === key) + '">' + label + "</button>").join("") + "</div>" : "";
+    root.hidden = false;
+    root.innerHTML = '<div class="cands-head"><h2 id="cands-h">Candidates <span class="tcount">' + all.length + '</span></h2><p class="hint">Beyond this week\'s Top 10 · ranked by multiple of creator median · max 3 per creator</p></div>' +
+      row + (empty || '<ol class="vlist">' + shown.map((rec) => pickCard(rec, "cands")).join("") + "</ol>");
   }
 
   function exploreCard(row) {
@@ -532,7 +566,8 @@
     if (note) note.textContent = "Instagram and YouTube share this list. " + storageLine();
     const currentCodes = new Set(VM.recs.map((rec) => rec.code));
     const picks = VM.recs.filter((rec) => Store.has("saved", rec.code)).map((rec) => pickCard(rec))
-      .concat(historyPicks().filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "history")));
+      .concat(historyPicks().filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "history")))
+      .concat((VM.candidates || []).filter((rec) => Store.has("saved", rec.code) && !currentCodes.has(rec.code)).map((rec) => pickCard(rec, "cands")));
     const inspire = (VM.crossNiche.candidates || []).filter((card) => Store.has("saved", card.id || card.dedupeKey)).map(crossCard);
     const explore = VM.reels.filter((row) => Store.has("saved", row.code || row.url)).slice(0, 50).map(exploreCard);
     const videos = savedYoutube();
@@ -705,6 +740,12 @@
       recState.sel = rank;
       renderModel();
       openSheet(pickDetail(rec));
+    } else if (kind === "cands") {
+      const rec = (VM.candidates || []).find((item) => item.code === id);
+      if (!rec) return;
+      recState.candCode = rec.code;
+      renderModel();
+      openSheet(pickDetail(rec));
     } else if (kind === "history") {
       const rec = historyPicks().find((item) => item.code === id);
       if (!rec) return;
@@ -852,6 +893,12 @@
     renderYoutube();
   });
   $("#rec-age").addEventListener("click", (event) => { const button = event.target.closest("[data-age]"); if (!button) return; recState.age = button.dataset.age; renderModel(); });
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-cand]");
+    if (!button) return;
+    recState.candTier = button.dataset.cand;
+    renderModel();
+  });
   $("#rec-hide-watched").addEventListener("change", (event) => { recState.hideWatched = event.target.checked; renderModel(); });
   $("#rail").addEventListener("keydown", (event) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
