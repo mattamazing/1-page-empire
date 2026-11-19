@@ -16,6 +16,7 @@ const state = {
   platformFilter: "all",
   packOwners: new Set(["mine"]),
   packTag: "all",
+  editing: "",
 };
 
 function esc(value) {
@@ -95,14 +96,49 @@ async function api(path, options = {}) {
   return data;
 }
 function poster(src, extra = "") {
-  if (!src) return `<span class="${extra.includes("yt") ? "yt-still" : "still"}">${extra}</span>`;
-  const klass = extra.includes("yt-x") ? "yt-still" : "still";
-  return `<span class="${klass}"><img alt="" src="${esc(src)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">${extra}</span>`;
+  const wide = extra.includes("yt");
+  if (!src) return `<span class="${wide ? "yt-still" : "still"}">${extra}</span>`;
+  return `<span class="${wide ? "yt-still" : "still"}"><img alt="" src="${esc(src)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">${extra}</span>`;
+}
+function glyph(path) {
+  return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function myPack(videoId) {
+  return state.swipe.find((row) => row.email === state.me.email && row.video_id === videoId);
+}
+function toast(message) {
+  let el = $("#toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    el.setAttribute("role", "status");
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.hidden = true; }, 2000);
 }
 function actions(item, platform) {
   const mine = mySave(platform, item.id);
-  const pack = platform === "yt" ? `<button class="btn" type="button" data-pack="${esc(item.id)}">Save packaging</button>` : "";
-  return `<div class="actions">${item.url ? `<a class="btn btn-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Open</a>` : ""}<button class="btn" type="button" data-save="${platform}:${esc(item.id)}" aria-pressed="${mine ? "true" : "false"}">${mine ? "Saved" : "Save idea"}</button>${pack}</div>`;
+  const packed = platform === "yt" ? myPack(item.id) : null;
+  const compact = platform === "yt";
+  const openIcon = compact ? glyph("M14 5h5v5M19 5l-8 8M16 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5") : "";
+  const saveIcon = compact ? glyph("M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1z") : "";
+  const packIcon = compact ? glyph("M4 8l8-4 8 4-8 4-8-4zM4 8v8l8 4 8-4V8") : "";
+  const pack = platform === "yt" ? `<button class="btn" type="button" data-pack="${esc(item.id)}" aria-pressed="${packed ? "true" : "false"}">${packIcon}<span>${packed ? "Saved" : "Save packaging"}</span></button>` : "";
+  return `<div class="actions${compact ? " actions-compact" : ""}">${item.url ? `<a class="btn btn-primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${openIcon}<span>Open</span></a>` : ""}<button class="btn" type="button" data-save="${platform}:${esc(item.id)}" aria-pressed="${mine ? "true" : "false"}">${saveIcon}<span>${mine ? "Saved" : "Save idea"}</span></button>${pack}</div>`;
+}
+function cardMenu(key, canEdit, canDelete) {
+  if (!canEdit && !canDelete) return "";
+  const edit = canEdit ? `<button type="button" data-edit-note="${esc(key)}">Edit note</button>` : "";
+  const remove = canDelete ? `<button type="button" data-remove="${esc(key)}">Delete</button>` : "";
+  return `<details class="more"><summary aria-label="More">⋯</summary><div class="more-pop">${edit}${remove}</div></details>`;
+}
+function noteBlock(key, note) {
+  if (state.editing === key) return `<textarea class="note-box" data-note-key="${esc(key)}">${esc(note || "")}</textarea>`;
+  return note ? `<p class="note">${esc(note)}</p>` : "";
 }
 function igCard(item) {
   const days = when(item.published);
@@ -111,7 +147,8 @@ function igCard(item) {
 }
 function ytCard(item) {
   const mult = multiple(item.multiplier);
-  return `<article class="yt-card"><button class="yt-main" type="button" data-open="yt" data-id="${esc(item.id)}">${poster(item.poster, mult ? `<span class="yt-x">${esc(mult)} median</span>` : "")}<span class="title">${esc(item.title)}</span><span class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.subs))} subs · ${esc(compact(item.views))} views · ${esc(when(item.published))}</span><span class="hook">${esc(item.hook || "")}</span></button>${actions(item, "yt")}</article>`;
+  const badge = mult ? `<span class="yt-x">${esc(mult)} median</span>` : "";
+  return `<article class="yt-card"><button class="yt-main" type="button" data-open="yt" data-id="${esc(item.id)}">${poster(item.poster, `yt${badge}`)}<span class="title">${esc(item.title)}</span><span class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.subs))} subs · ${esc(compact(item.views))} views · ${esc(when(item.published))}</span><span class="hook">${esc(item.hook || "")}</span></button>${actions(item, "yt")}</article>`;
 }
 function findItem(platform, id) {
   const ig = state.data.ig;
@@ -122,6 +159,8 @@ function findItem(platform, id) {
 }
 function openSheet(html) {
   $("#sheet-body").innerHTML = html;
+  const heading = $("#sheet-body h2");
+  if (heading) heading.id = "sheet-title";
   $("#sheet").hidden = false;
 }
 function closeSheet() {
@@ -129,11 +168,10 @@ function closeSheet() {
   $("#sheet-body").innerHTML = "";
 }
 function detail(item, platform) {
-  const mine = mySave(platform, item.id);
   const twist = item.ai_twist ? `<section class="adapt"><span class="label">AI twist</span><p>${esc(item.ai_twist)}</p></section>` : "";
   const mult = multiple(item.multiplier);
   const multHtml = mult ? ` · <b>${esc(mult)}${platform === "yt" ? " median" : ""}</b>` : "";
-  return `<article><h2>${esc(item.title || "Untitled")}</h2><p class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.views))} views · ${esc(when(item.published))}${multHtml}</p>${actions(item, platform)}<p class="label">Hook</p><p class="big">${esc(item.hook || "No hook recorded.")}</p>${item.why ? `<p>${esc(item.why)}</p>` : ""}${twist}<label>Note<input class="input" id="note" value="${esc(mine ? mine.note : "")}" placeholder="Optional note"></label></article>`;
+  return `<article><h2>${esc(item.title || "Untitled")}</h2><p class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.views))} views · ${esc(when(item.published))}${multHtml}</p>${actions(item, platform)}<p class="label">Hook</p><p class="big">${esc(item.hook || "No hook recorded.")}</p>${item.why ? `<p>${esc(item.why)}</p>` : ""}${twist}</article>`;
 }
 function renderPicks() {
   const picks = state.data.ig.picks;
@@ -156,12 +194,12 @@ function renderPicks() {
 }
 function renderSimple(title, items, platform) {
   const cards = items.map((item) => platform === "yt" ? ytCard(item) : igCard(item)).join("");
-  return `<div class="view-head"><div><h2>${esc(title)}</h2><p class="updated">${esc(updatedLine())}</p></div></div><div class="list">${cards || `<p class="hint">Nothing in this list.</p>`}</div>`;
+  return `<div class="view-head"><div><h2>${esc(title)}</h2><p class="updated">${esc(updatedLine())}</p></div></div><div class="list${platform === "yt" ? " yt-grid" : ""}">${cards || `<p class="hint">Nothing in this list.</p>`}</div>`;
 }
 function renderYoutube() {
   const lists = state.data.yt;
   const segs = [["mine", `My winners ${lists.mine.length}`], ["peers", `Peers ${lists.peers.length}`], ["broad", `Broad business ${lists.broad.length}`], ["big", `Big channels ${lists.big.length}`]];
-  return `<div class="view-head"><div><h2>YouTube</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-yt="${key}" aria-pressed="${state.yt === key}">${label}</button>`).join("")}</div></div><div class="list">${(lists[state.yt] || []).map(ytCard).join("")}</div>`;
+  return `<div class="view-head"><div><h2>YouTube</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-yt="${key}" aria-pressed="${state.yt === key}">${label}</button>`).join("")}</div></div><div class="list yt-grid">${(lists[state.yt] || []).map(ytCard).join("")}</div>`;
 }
 function ownerName(email) {
   const known = state.users.find((user) => user.email === email);
@@ -180,6 +218,10 @@ function allowRow(email, selected) {
   if (selected.has("mine") && email === state.me.email) return true;
   return selected.has(email);
 }
+function personRow(row) {
+  const who = personLabel(row.email, row.name);
+  return `<span class="person"><span class="avatar">${esc(initials(who, row.email))}</span>${esc(who)}</span>`;
+}
 function renderSaved() {
   const ideas = state.savedTab === "ideas";
   const rows = state.saves.filter((row) => allowRow(row.email, state.owners)).filter((row) => {
@@ -187,35 +229,44 @@ function renderSaved() {
     if (state.platformFilter === "ig") return row.platform === "ig";
     return true;
   });
-  const packs = state.swipe.filter((row) => allowRow(row.email, state.packOwners)).filter((row) => state.packTag === "all" || row.steal === state.packTag);
+  const packs = state.swipe.filter((row) => allowRow(row.email, state.packOwners));
   const ideaCards = rows.map((row) => {
     const snap = row.snapshot || {};
-    const who = personLabel(row.email, row.name);
+    const key = `idea:${row.platform}:${row.item_id}`;
+    const own = row.email === state.me.email;
+    const foot = `<div class="card-foot">${personRow(row)}${cardMenu(key, own, own)}</div>${noteBlock(key, row.note)}`;
+    if (row.platform === "yt") {
+      const mult = multiple(snap.multiplier);
+      const badge = mult ? `<span class="yt-x">${esc(mult)}</span>` : "";
+      return `<article class="yt-card">${poster(snap.poster, `yt${badge}`)}<h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">${esc(snap.creator || "YouTube")}</p>${snap.hook ? `<p class="hook">${esc(snap.hook)}</p>` : ""}${foot}</article>`;
+    }
     const mult = multiple(snap.multiplier);
-    const views = Number(snap.views);
-    const viewsText = Number.isFinite(views) && views > 0 ? `${compact(views)} views` : "";
-    return `<article class="tile"><span class="person"><span class="avatar">${esc(initials(who, row.email))}</span>${esc(who)}</span><h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">${esc(row.platform === "yt" ? "YouTube long-form" : "Instagram Reels")}${snap.creator ? ` · ${esc(snap.creator)}` : ""}${viewsText ? ` · ${esc(viewsText)}` : ""}${mult ? ` · <span class="x">${esc(mult)}</span>` : ""}</p>${snap.hook ? `<p class="hook">${esc(snap.hook)}</p>` : ""}${row.note ? `<p class="note">${esc(row.note)}</p>` : ""}</article>`;
+    return `<article class="poster-tile"><span class="poster-still">${snap.poster ? `<img alt="" src="${esc(snap.poster)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ""}</span><h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">@${esc(snap.creator || "instagram")}${mult ? ` · <span class="x">${esc(mult)}</span>` : ""}</p>${foot}</article>`;
   }).join("");
   const packCards = packs.map((row) => {
-    const who = personLabel(row.email, row.name);
-    return `<article class="yt-card">${poster(row.poster, "")}<h2 class="title">${esc(row.title || row.url)}</h2><p class="meta">${esc(row.channel || "")} · ${esc(row.steal)}</p><span class="person"><span class="avatar">${esc(initials(who, row.email))}</span>${esc(who)}</span>${row.note ? `<p class="note">${esc(row.note)}</p>` : ""}${row.email === state.me.email || state.me.role === "admin" ? `<div class="actions"><button class="btn" type="button" data-pack-del="${esc(row.id)}">Delete</button></div>` : ""}</article>`;
+    const key = `pack:${row.id}`;
+    const own = row.email === state.me.email;
+    return `<article class="yt-card">${poster(row.poster, "yt")}<h2 class="title">${esc(row.title || row.url)}</h2><p class="meta">${esc(row.channel || "")}</p><div class="card-foot">${personRow(row)}${cardMenu(key, own, own || state.me.role === "admin")}</div>${noteBlock(key, row.note)}</article>`;
   }).join("");
   const filters = ideas
     ? `<div class="chips" aria-label="Who saved">${ownerChips("owners")}</div><div class="chips"><button class="chip" data-pf="all" aria-pressed="${state.platformFilter === "all"}">All</button><button class="chip" data-pf="yt" aria-pressed="${state.platformFilter === "yt"}">YouTube long-form</button><button class="chip" data-pf="ig" aria-pressed="${state.platformFilter === "ig"}">Instagram Reels</button></div>`
-    : `<form id="url-form" class="list"><label>Add from URL<input class="input" name="url" placeholder="youtube.com/watch or youtu.be"></label><div class="chips"><select class="select" name="steal"><option value="both">Title and thumbnail</option><option value="title">Title</option><option value="thumbnail">Thumbnail</option></select></div><label>Note<input class="input" name="note"></label><button class="btn btn-primary" type="submit">Add</button></form><div class="chips">${ownerChips("packOwners")}</div><div class="chips">${["all", "title", "thumbnail", "both"].map((tag) => `<button class="chip" data-tag="${tag}" aria-pressed="${state.packTag === tag}">${tag === "all" ? "All tags" : tag}</button>`).join("")}</div>`;
-  return `<div class="view-head"><div><h2>Saved</h2><div class="seg"><button class="chip" type="button" data-saved-tab="ideas" aria-pressed="${ideas}">Video ideas</button><button class="chip" type="button" data-saved-tab="packaging" aria-pressed="${!ideas}">Packaging</button></div></div></div>${filters}<div class="list">${ideas ? ideaCards || `<p class="hint">Nothing saved yet.</p>` : packCards || `<p class="hint">No packaging notes yet.</p>`}</div>`;
+    : `<button class="btn add-toggle" type="button" data-show-url>+ Add from URL</button><form id="url-form" class="url-row"><input class="input" name="url" placeholder="youtube.com/watch or youtu.be" aria-label="YouTube URL"><button class="btn btn-primary" type="submit">Add</button></form><div class="chips" aria-label="Who saved">${ownerChips("packOwners")}</div>`;
+  const cards = ideas ? ideaCards : packCards;
+  return `<div class="view-head"><div><h2>Saved</h2><div class="seg"><button class="chip" type="button" data-saved-tab="ideas" aria-pressed="${ideas}">Video ideas</button><button class="chip" type="button" data-saved-tab="packaging" aria-pressed="${!ideas}">Packaging</button></div></div></div>${filters}<div class="list yt-grid">${cards || `<p class="hint">${ideas ? "Nothing saved yet." : "No packaging ideas yet."}</p>`}</div>`;
 }
 function renderAdmin() {
   if (state.me.role !== "admin") return `<p>Admins only.</p>`;
   const rows = state.users.map((user) => `<div class="admin-row"><div><b>${esc(user.name || user.email)}</b><div class="hint">${esc(user.email)} · ${esc(user.role)}${user.disabled ? " · off" : ""}</div></div><button class="btn" data-role="${esc(user.email)}" data-next="${user.role === "admin" ? "member" : "admin"}">${user.role === "admin" ? "Make member" : "Make admin"}</button><button class="btn" data-disable="${esc(user.email)}" data-off="${user.disabled ? "0" : "1"}">${user.disabled ? "Enable" : "Disable"}</button><button class="btn" data-reset="${esc(user.email)}">Reset password</button><button class="btn" data-del="${esc(user.email)}">Delete</button></div>`).join("");
-  return `<div class="view-head"><h2>People</h2></div><form id="add-user" class="list"><h2>Add user</h2><label>Email<input class="input" name="email" type="email" required></label><label>Name<input class="input" name="name" required></label><label>Role<select class="select" name="role"><option value="member">Member</option><option value="admin">Admin</option></select></label><label>Initial password<input class="input" name="password" type="text" required></label><button class="btn btn-primary" type="submit">Add</button><p id="admin-msg" class="err" hidden></p></form><div>${rows}</div>`;
+  return `<div class="view-head"><h2>People</h2></div><form id="add-user" class="panel-card"><h2>Add user</h2><label>Email<input class="input" name="email" type="email" required></label><label>Name<input class="input" name="name" required></label><label>Role<select class="select" name="role"><option value="member">Member</option><option value="admin">Admin</option></select></label><label>Initial password<input class="input" name="password" type="text" required></label><button class="btn btn-primary" type="submit">Add</button><p id="admin-msg" class="err" hidden></p></form><div>${rows}</div>`;
 }
 function render() {
   const main = $("#main");
   $("#built-line").textContent = state.data ? updatedLine().split(" | ")[0].replace("Updated ", "Built ") : "";
   $("#about-copy").textContent = "Reels and YouTube lists load after sign-in. Saves live on the account. Watched stays in this browser.";
-  $("#who").textContent = `${state.me.name || state.me.email} · ${state.me.role}`;
-  $("#admin-btn").hidden = state.me.role !== "admin";
+  const who = $("#who");
+  if (who) who.textContent = `${state.me.name || state.me.email} · ${state.me.role}`;
+  const adminBtn = $("#admin-btn");
+  if (adminBtn) adminBtn.hidden = state.me.role !== "admin";
   $("#plat-ig").setAttribute("aria-pressed", String(state.platform === "ig" && location.hash !== "#saved" && location.hash !== "#admin"));
   $("#plat-yt").setAttribute("aria-pressed", String(state.platform === "yt" && location.hash !== "#saved" && location.hash !== "#admin"));
   const savedMode = location.hash === "#saved";
@@ -269,20 +320,13 @@ $("#login-form").addEventListener("submit", async (event) => {
     $("#login-error").textContent = error.message;
   }
 });
-$("#logout-btn").addEventListener("click", async () => { await api("/outlier/api/logout", { method: "POST", body: {} }); location.reload(); });
-$("#account-btn").addEventListener("click", () => { const menu = $("#account-menu"); menu.hidden = !menu.hidden; $("#account-btn").setAttribute("aria-expanded", String(!menu.hidden)); });
+$("#account-btn").addEventListener("click", () => {
+  const admin = state.me.role === "admin" ? `<button class="btn" id="admin-btn" type="button">Admin</button>` : "";
+  openSheet(`<h2>Account</h2><p class="who" id="who">${esc(state.me.name || state.me.email)} · ${esc(state.me.role)}</p><form id="pw-form"><label>Current<input class="input" name="current" type="password" autocomplete="current-password"></label><label>New<input class="input" name="next" type="password" autocomplete="new-password"></label><button class="btn" type="submit">Change password</button><p id="pw-msg" class="hint"></p></form>${admin}<button class="btn" id="logout-btn" type="button">Log out</button>`);
+});
 $("#saved-btn").addEventListener("click", () => { location.hash = "#saved"; });
-$("#admin-btn").addEventListener("click", () => { location.hash = "#admin"; $("#account-menu").hidden = true; });
 $("#plat-ig").addEventListener("click", () => { state.platform = "ig"; if (location.hash === "#saved" || location.hash === "#admin") location.hash = "#picks"; else render(); });
 $("#plat-yt").addEventListener("click", () => { state.platform = "yt"; if (location.hash === "#saved" || location.hash === "#admin") location.hash = "#youtube"; else { location.hash = "#youtube"; render(); } });
-$("#pw-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = new FormData(event.target);
-  try {
-    await api("/outlier/api/account/password", { method: "POST", body: { current: form.get("current"), next: form.get("next") } });
-    $("#pw-msg").textContent = "Password changed.";
-  } catch (error) { $("#pw-msg").textContent = error.message; }
-});
 window.addEventListener("hashchange", render);
 document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-close]")) { closeSheet(); return; }
@@ -319,28 +363,68 @@ document.addEventListener("click", async (event) => {
     const item = findItem(platform, id);
     if (!item) return;
     const existing = mySave(platform, id);
-    const note = $("#note") ? $("#note").value : (existing ? existing.note : "");
     const multiplier = item.multiplier ?? item.outlierX ?? item.medianX ?? null;
     const views = item.views ?? null;
-    if (existing && !$("#note")) await api("/outlier/api/saves", { method: "DELETE", body: { platform, item_id: id } });
-    else await api("/outlier/api/saves", { method: "PUT", body: { platform, item_id: id, note, snapshot: { title: item.title, creator: item.creator || item.channel, url: item.url, poster: item.poster, thumb_ref: `${platform}:${id}`, views, multiplier, hook: item.hook } } });
+    if (existing) {
+      await api("/outlier/api/saves", { method: "DELETE", body: { platform, item_id: id } });
+      toast("Removed from saved");
+    } else {
+      await api("/outlier/api/saves", { method: "PUT", body: { platform, item_id: id, note: "", snapshot: { title: item.title, creator: item.creator || item.channel, url: item.url, poster: item.poster, thumb_ref: `${platform}:${id}`, views, multiplier, hook: item.hook } } });
+      toast("Saved");
+    }
     await refreshSaves();
     render();
-    if (!$("#sheet").hidden && item) openSheet(detail(item, platform));
+    if (!$("#sheet").hidden) openSheet(detail(item, platform));
     return;
   }
   const pack = event.target.closest("[data-pack]");
   if (pack) {
     const item = findItem("yt", pack.dataset.pack);
-    openSheet(`<form id="pack-form"><h2>Save packaging</h2><p>${esc(item.title)}</p><label>What to steal<select class="select" name="steal"><option value="both">Title and thumbnail</option><option value="title">Title</option><option value="thumbnail">Thumbnail</option></select></label><label>Note<input class="input" name="note" placeholder="What to copy"></label><button class="btn btn-primary" type="submit">Save packaging</button></form>`);
-    $("#pack-form").dataset.id = item.id;
-    return;
-  }
-  const del = event.target.closest("[data-pack-del]");
-  if (del) {
-    await api("/outlier/api/swipe", { method: "DELETE", body: { id: del.dataset.packDel } });
+    if (!item) return;
+    const existing = myPack(item.id);
+    if (existing) {
+      await api("/outlier/api/swipe", { method: "DELETE", body: { id: existing.id } });
+      toast("Removed from packaging");
+    } else {
+      await api("/outlier/api/swipe", { method: "POST", body: { steal: "both", note: "", card: { video_id: item.id, title: item.title, channel: item.creator || item.channel, url: item.url, poster: item.poster } } });
+      toast("Packaging saved");
+    }
     await refreshSaves();
     render();
+    if (!$("#sheet").hidden) openSheet(detail(item, "yt"));
+    return;
+  }
+  const editNote = event.target.closest("[data-edit-note]");
+  if (editNote) {
+    state.editing = editNote.dataset.editNote;
+    render();
+    const box = $(".note-box");
+    if (box) box.focus();
+    return;
+  }
+  const remove = event.target.closest("[data-remove]");
+  if (remove) {
+    const [kind, a, b] = remove.dataset.remove.split(":");
+    if (kind === "pack") await api("/outlier/api/swipe", { method: "DELETE", body: { id: a } });
+    else await api("/outlier/api/saves", { method: "DELETE", body: { platform: a, item_id: b } });
+    toast("Deleted");
+    await refreshSaves();
+    render();
+    return;
+  }
+  if (event.target.closest("[data-show-url]")) {
+    $("#url-form").classList.toggle("open");
+    return;
+  }
+  if (event.target.closest("#logout-btn")) {
+    await api("/outlier/api/logout", { method: "POST", body: {} });
+    location.reload();
+    return;
+  }
+  if (event.target.closest("#admin-btn")) {
+    location.hash = "#admin";
+    closeSheet();
+    return;
   }
   const role = event.target.closest("[data-role]");
   if (role) {
@@ -359,9 +443,9 @@ document.addEventListener("click", async (event) => {
     try { await api("/outlier/api/admin/users", { method: "PATCH", body: { email: reset.dataset.reset, password } }); alert("Password reset."); }
     catch (error) { alert(error.message); }
   }
-  const remove = event.target.closest("[data-del]");
-  if (remove && window.confirm(`Delete ${remove.dataset.del}?`)) {
-    try { await api("/outlier/api/admin/users", { method: "DELETE", body: { email: remove.dataset.del, confirm: true } }); state.users = (await api("/outlier/api/admin/users")).users; render(); }
+  const delUser = event.target.closest("[data-del]");
+  if (delUser && window.confirm(`Delete ${delUser.dataset.del}?`)) {
+    try { await api("/outlier/api/admin/users", { method: "DELETE", body: { email: delUser.dataset.del, confirm: true } }); state.users = (await api("/outlier/api/admin/users")).users; render(); }
     catch (error) { alert(error.message); }
   }
 });
@@ -379,24 +463,44 @@ document.addEventListener("submit", async (event) => {
       msg.textContent = error.message;
     }
   }
-  if (event.target.id === "pack-form") {
+  if (event.target.id === "pw-form") {
     event.preventDefault();
     const form = new FormData(event.target);
-    const item = findItem("yt", event.target.dataset.id);
     try {
-      await api("/outlier/api/swipe", { method: "POST", body: { steal: form.get("steal"), note: form.get("note"), card: { video_id: item.id, title: item.title, channel: item.creator, url: item.url, poster: item.poster } } });
-      await refreshSaves();
-      closeSheet();
-    } catch (error) { alert(error.message); }
+      await api("/outlier/api/account/password", { method: "POST", body: { current: form.get("current"), next: form.get("next") } });
+      $("#pw-msg").textContent = "Password changed.";
+    } catch (error) { $("#pw-msg").textContent = error.message; }
   }
   if (event.target.id === "url-form") {
     event.preventDefault();
     const form = new FormData(event.target);
     try {
-      await api("/outlier/api/swipe", { method: "POST", body: { url: form.get("url"), steal: form.get("steal"), note: form.get("note") } });
+      await api("/outlier/api/swipe", { method: "POST", body: { url: form.get("url"), steal: "both", note: "" } });
+      event.target.reset();
+      toast("Packaging saved");
       await refreshSaves();
       render();
     } catch (error) { alert(error.message); }
   }
+});
+document.addEventListener("focusout", async (event) => {
+  const box = event.target.closest ? event.target.closest(".note-box") : null;
+  if (!box) return;
+  const key = box.dataset.noteKey || "";
+  const value = box.value;
+  state.editing = "";
+  try {
+    if (key.startsWith("pack:")) {
+      await api("/outlier/api/swipe", { method: "PATCH", body: { id: key.slice(5), note: value } });
+    } else if (key.startsWith("idea:")) {
+      const [, platform, itemId] = key.split(":");
+      const row = state.saves.find((item) => item.platform === platform && item.item_id === itemId && item.email === state.me.email);
+      if (!row) return;
+      await api("/outlier/api/saves", { method: "PUT", body: { platform, item_id: itemId, note: value, snapshot: row.snapshot } });
+    }
+    toast("Note saved");
+    await refreshSaves();
+    render();
+  } catch (error) { alert(error.message); }
 });
 start();

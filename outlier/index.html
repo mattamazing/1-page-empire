@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Outlier Research</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="app.66f83ba2f9.css">
+<link rel="stylesheet" href="app.b34208c7ab.css">
 </head>
 <body>
 <div id="login" class="login" hidden>
@@ -35,20 +35,7 @@
           <summary class="btn btn-compact"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>About</span></summary>
           <p class="about-pop hint" id="about-copy"></p>
         </details>
-        <div class="menu">
-          <button class="btn btn-compact" id="account-btn" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Account</span></button>
-          <div id="account-menu" class="menu-pop" hidden>
-            <p id="who"></p>
-            <form id="pw-form">
-              <label>Current<input class="input" name="current" type="password" autocomplete="current-password"></label>
-              <label>New<input class="input" name="next" type="password" autocomplete="new-password"></label>
-              <button class="btn" type="submit">Change password</button>
-              <p id="pw-msg" class="hint"></p>
-            </form>
-            <button class="btn" id="admin-btn" type="button" hidden>Admin</button>
-            <button class="btn" id="logout-btn" type="button">Log out</button>
-          </div>
-        </div>
+        <button class="btn btn-compact" id="account-btn" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Account</span></button>
       </div>
     </div>
   </header>
@@ -65,12 +52,13 @@
   <main class="wrap" id="main"></main>
 </div>
 <div id="sheet" class="sheet" hidden>
-  <button class="sheet-backdrop" type="button" data-close aria-label="Close details"></button>
-  <div class="sheet-panel" role="dialog" aria-modal="true">
-    <div class="sheet-bar"><button class="btn" type="button" data-close>Close</button></div>
+  <button class="sheet-backdrop" type="button" data-close aria-label="Close"></button>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <button class="icon-x" type="button" data-close aria-label="Close">×</button>
     <div id="sheet-body"></div>
   </div>
 </div>
-<script src="app.21a0112034.js"></script>
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="app.d23fb5a287.js"></script>
 </body>
 </html>
