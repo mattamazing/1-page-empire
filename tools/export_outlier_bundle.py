@@ -45,6 +45,10 @@ def card_from_pick(item: dict) -> dict:
         "adapt": item.get("angle") or "",
         "paid": item.get("paidPartnership") is True,
         "followers": item.get("followers"),
+        "multiplier_basis": item.get("multiplierBasis") if item.get("multiplierBasis") == "median" else "",
+        "tier": item.get("tier") or "",
+        "shortlist_rank": item.get("shortlist_rank"),
+        "in_top10": bool(item.get("in_top10")),
     }
 
 
@@ -139,6 +143,7 @@ def main() -> None:
         },
         "ig": {
             "picks": [card_from_pick(item) for item in payload.get("recs") or []],
+            "candidates": [card_from_pick(item) for item in payload.get("candidates") or []],
             "history": [
                 {
                     "label": group.get("set_label") or "Previous",

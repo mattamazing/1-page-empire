@@ -495,7 +495,11 @@
       hooks: parseHooks(item),
       why: item.why || null,
       adapt: item.angle || null,
-      cautions: cautionsFrom(item)
+      cautions: cautionsFrom(item),
+      tier: item.tier || "",
+      shortlistRank: typeof item.shortlist_rank === "number" ? item.shortlist_rank : null,
+      inTop10: !!item.in_top10,
+      median: item.multiplierBasis === "median"
     };
   }
 
@@ -841,6 +845,9 @@
     history.sort(function (a, b) {
       return String(b.retiredAt || b.retiredOn || "").localeCompare(String(a.retiredAt || a.retiredOn || ""));
     });
+    const candidates = (data.candidates || [])
+      .map(function (item) { return toRec(item, byCode[item.shortCode], buildIso); })
+      .sort(function (a, b) { return (a.shortlistRank || 999) - (b.shortlistRank || 999); });
     const reels = scoredRows.map(toReel);
     const creators = (data.dir || []).map(toCreator);
     const people = (data.shortlist && data.shortlist.candidates ? data.shortlist.candidates : []).map(toShortlistPerson);
@@ -859,6 +866,7 @@
     return {
       build: data.build || { iso: null, zone: "America/Chicago" },
       recs: recs,
+      candidates: candidates,
       history: history,
       recsOmittedReason: data.recsOmittedReason || null,
       reels: reels,

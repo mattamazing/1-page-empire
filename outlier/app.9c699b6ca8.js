@@ -17,6 +17,7 @@ const state = {
   packOwners: new Set(["mine"]),
   packTag: "all",
   editing: "",
+  candTier: "all",
 };
 
 function esc(value) {
@@ -143,10 +144,22 @@ function noteBlock(key, note) {
   if (state.editing === key) return `<textarea class="note-box" data-note-key="${esc(key)}">${esc(note || "")}</textarea>`;
   return note ? `<p class="note">${esc(note)}</p>` : "";
 }
-function igCard(item, index = 99) {
+function igMultiple(item) {
+  const text = multiple(item.multiplier);
+  if (!text) return "";
+  return item.multiplier_basis === "median" ? text.replace(/x$/, "× median") : text;
+}
+function tierBadge(tier) {
+  const labels = { top10: "Top 10", strong: "Strong", rising: "Rising" };
+  if (!labels[tier]) return "";
+  return `<span class="tier tier-${tier}">${labels[tier]}</span>`;
+}
+function igCard(item, index = 99, opts = {}) {
   const days = when(item.published);
-  const mult = multiple(item.multiplier);
-  return `<article class="tile"><button class="tile-main" type="button" data-open="ig" data-id="${esc(item.id)}">${poster(item.poster, item.rank ? `<span class="rank">${esc(item.rank)}</span>` : "", index)}<span><span class="title">${esc(item.title || item.hook || "Untitled")}</span><span class="meta"><span>@${esc(item.creator || "")}</span>${mult ? `<span class="x">${esc(mult)}</span>` : ""}<span>${esc(days)}</span></span><span class="hook">${esc(item.hook || "")}</span></span></button>${actions(item, "ig")}</article>`;
+  const mult = igMultiple(item);
+  const tier = opts.tier ? tierBadge(item.tier) : "";
+  const rank = opts.tier ? "" : (item.rank ? `<span class="rank">${esc(item.rank)}</span>` : "");
+  return `<article class="tile"><button class="tile-main" type="button" data-open="ig" data-id="${esc(item.id)}">${poster(item.poster, rank, index)}<span><span class="title">${esc(item.title || item.hook || "Untitled")}</span><span class="meta">${tier}<span>@${esc(item.creator || "")}</span>${mult ? `<span class="x">${esc(mult)}</span>` : ""}<span>${esc(days)}</span></span><span class="hook">${esc(item.hook || "")}</span></span></button>${actions(item, "ig")}</article>`;
 }
 function ytCard(item, index = 99) {
   const mult = multiple(item.multiplier);
@@ -156,7 +169,7 @@ function ytCard(item, index = 99) {
 function findItem(platform, id) {
   const ig = state.data.ig;
   const pools = platform === "ig"
-    ? [...ig.picks, ...ig.history.flatMap((group) => group.picks), ...ig.explore, ...ig.inspire]
+    ? [...ig.picks, ...(ig.candidates || []), ...ig.history.flatMap((group) => group.picks), ...ig.explore, ...ig.inspire]
     : [...state.data.yt.mine, ...state.data.yt.peers, ...state.data.yt.broad, ...state.data.yt.big];
   return pools.find((item) => item.id === id);
 }
@@ -172,7 +185,7 @@ function closeSheet() {
 }
 function detail(item, platform) {
   const twist = item.ai_twist ? `<section class="adapt"><span class="label">AI twist</span><p>${esc(item.ai_twist)}</p></section>` : "";
-  const mult = multiple(item.multiplier);
+  const mult = platform === "ig" ? igMultiple(item) : multiple(item.multiplier);
   const multHtml = mult ? ` · <b>${esc(mult)}${platform === "yt" ? " median" : ""}</b>` : "";
   return `<article><h2>${esc(item.title || "Untitled")}</h2><p class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.views))} views · ${esc(when(item.published))}${multHtml}</p>${actions(item, platform)}<p class="label">Hook</p><p class="big">${esc(item.hook || "No hook recorded.")}</p>${item.why ? `<p>${esc(item.why)}</p>` : ""}${twist}</article>`;
 }
@@ -193,7 +206,27 @@ function renderPicks() {
     });
     body = `<div class="list">${list.map((item, index) => igCard(item, index)).join("")}</div>`;
   }
-  return `<div class="view-head"><div><h2>Top picks</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-seg="${key}" aria-pressed="${state.igSeg === key}">${label}</button>`).join("")}</div></div>${body}`;
+  return `<div class="view-head"><div><h2>Top picks</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-seg="${key}" aria-pressed="${state.igSeg === key}">${label}</button>`).join("")}</div></div>${body}${candidatesSection()}`;
+}
+function candidatesSection() {
+  const all = (state.data.ig.candidates || [])
+    .filter((item) => item.tier !== "top10" && !item.in_top10)
+    .slice()
+    .sort((a, b) => (a.shortlist_rank || 999) - (b.shortlist_rank || 999));
+  if (!all.length || state.igSeg === "previous") return "";
+  const counts = { strong: 0, rising: 0 };
+  all.forEach((item) => { if (counts[item.tier] != null) counts[item.tier] += 1; });
+  const chips = [["all", `All ${all.length}`]];
+  if (counts.strong) chips.push(["strong", `Strong ${counts.strong}`]);
+  if (counts.rising) chips.push(["rising", `Rising ${counts.rising}`]);
+  if (state.candTier !== "all" && !counts[state.candTier]) state.candTier = "all";
+  const shown = state.candTier === "all" ? all : all.filter((item) => item.tier === state.candTier);
+  const names = { strong: "Strong", rising: "Rising" };
+  const body = shown.length
+    ? `<div class="list grid">${shown.map((item, index) => igCard(item, index, { tier: true })).join("")}</div>`
+    : `<p class="missing">No ${names[state.candTier] || "matching"} picks this week.</p>`;
+  const row = chips.length > 1 ? `<div class="chips" role="group" aria-label="Tier">${chips.map(([key, label]) => `<button class="chip" type="button" data-cand="${key}" aria-pressed="${state.candTier === key}">${label}</button>`).join("")}</div>` : "";
+  return `<section class="cands" aria-labelledby="cands-h"><div class="cands-head"><h2 id="cands-h">Candidates <span class="tcount">${all.length}</span></h2><p class="hint">Beyond this week's Top 10 · ranked by multiple of creator median · max 3 per creator</p></div>${row}${body}</section>`;
 }
 function renderSimple(title, items, platform) {
   const cards = items.map((item, index) => platform === "yt" ? ytCard(item, index) : igCard(item, index)).join("");
@@ -344,10 +377,10 @@ function skeleton() {
   const head = `<div class="view-head"><div><h2>${skeletonTitle()}</h2><span class="sk sk-updated"></span></div><div class="seg" aria-hidden="true">${chips}</div></div>`;
   if (location.hash === "#admin") return head;
   if (youtube) {
-    const cards = Array.from({ length: 6 }, () => '<article class="yt-card skeleton-card" aria-hidden="true"><span class="yt-still sk"></span><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span></article>').join("");
+    const cards = Array.from({ length: 6 }, () => '<article class="yt-card skeleton-card" aria-hidden="true"><span class="yt-still sk"></span><span class="sk-copy"><span class="sk sk-line t1"></span><span class="sk sk-line t2"></span><span class="sk sk-line meta"></span><span class="sk sk-line h1"></span><span class="sk sk-line h2"></span></span><div class="sk-actions"><span class="sk sk-btn"></span><span class="sk sk-btn"></span><span class="sk sk-btn"></span></div></article>').join("");
     return `${head}<div class="list yt-grid">${cards}</div>`;
   }
-  const tiles = Array.from({ length: 3 }, () => '<article class="tile skeleton-card" aria-hidden="true"><div class="tile-main"><span class="still sk"></span><span class="sk-copy"><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span></span></div><div class="actions"><span class="sk sk-btn"></span></div></article>').join("");
+  const tiles = Array.from({ length: 3 }, () => '<article class="tile skeleton-card" aria-hidden="true"><div class="tile-main"><span class="still sk"></span><span class="sk-copy"><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span></span></div><div class="actions"><span class="sk sk-btn sm"></span><span class="sk sk-btn lg"></span></div></article>').join("");
   return `${head}<div class="list">${tiles}</div>`;
 }
 async function refreshSaves() {
@@ -432,6 +465,8 @@ document.addEventListener("click", async (event) => {
   if (ig) { state.ig = ig.dataset.ig; state.platform = "ig"; location.hash = "#picks"; render(); return; }
   const seg = event.target.closest("[data-seg]");
   if (seg) { state.igSeg = seg.dataset.seg; render(); return; }
+  const cand = event.target.closest("[data-cand]");
+  if (cand) { state.candTier = cand.dataset.cand; render(); return; }
   const yt = event.target.closest("[data-yt]");
   if (yt) { state.yt = yt.dataset.yt; render(); return; }
   const savedTab = event.target.closest("[data-saved-tab]");
