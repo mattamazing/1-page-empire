@@ -200,20 +200,25 @@ export function bundleBytes(raw) {
   return { bytes, gzip };
 }
 
+export function bundleSha(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
 export function etagFor(bytes) {
-  return `"${createHash("sha256").update(bytes).digest("hex").slice(0, 32)}"`;
+  return `"${bundleSha(bytes)}"`;
 }
 
 export function encodeBundle(bytes, req) {
   const tag = etagFor(bytes);
+  const cache = "private, no-cache";
   if ((req.headers.get("if-none-match") || "") === tag) {
-    return new Response(null, { status: 304, headers: { etag: tag, "cache-control": "private, no-store" } });
+    return new Response(null, { status: 304, headers: { etag: tag, "cache-control": cache, vary: "accept-encoding" } });
   }
   const packed = bundleBytes(bytes);
   const accept = req.headers.get("accept-encoding") || "";
   const headers = {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": "private, no-store",
+    "cache-control": cache,
     etag: tag,
     vary: "accept-encoding",
   };
@@ -247,4 +252,20 @@ export function youtubeId(url) {
 
 export function saveKey(email, platform, id) {
   return `${String(email).toLowerCase()}|${platform}|${id}`;
+}
+
+const INDEX_KEY = "index";
+
+export async function rowsFromStore(store) {
+  const indexed = await store.get(INDEX_KEY, { type: "json" });
+  if (indexed && Array.isArray(indexed.rows)) return indexed.rows;
+  const listed = await store.list();
+  const keys = (listed.blobs || []).map((blob) => blob.key).filter((key) => key !== INDEX_KEY);
+  const rows = (await Promise.all(keys.map((key) => store.get(key, { type: "json" })))).filter((row) => row && row.email);
+  await store.setJSON(INDEX_KEY, { rows });
+  return rows;
+}
+
+export async function writeRows(store, rows) {
+  await store.setJSON(INDEX_KEY, { rows });
 }

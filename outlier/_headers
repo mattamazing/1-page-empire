@@ -1,0 +1,9 @@
+# Applied when this folder is the publish directory.
+/index.html
+  Cache-Control: private, no-cache
+/app.*
+  Cache-Control: public, max-age=31536000, immutable
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/manifest.webmanifest
+  Cache-Control: private, no-cache

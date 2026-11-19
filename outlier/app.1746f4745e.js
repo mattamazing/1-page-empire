@@ -95,10 +95,13 @@ async function api(path, options = {}) {
   if (!response.ok) throw new Error((data && data.error) || "Something went wrong.");
   return data;
 }
-function poster(src, extra = "") {
+function poster(src, extra = "", index = 99) {
   const wide = extra.includes("yt");
-  if (!src) return `<span class="${wide ? "yt-still" : "still"}">${extra}</span>`;
-  return `<span class="${wide ? "yt-still" : "still"}"><img alt="" src="${esc(src)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">${extra}</span>`;
+  const box = wide ? "yt-still" : "still";
+  if (!src) return `<span class="${box} still-empty"><span class="still-fallback" aria-hidden="true"></span>${extra}</span>`;
+  const eager = index < 4;
+  const priority = index === 0 ? " fetchpriority=\"high\"" : "";
+  return `<span class="${box}"><img alt="" src="${esc(src)}" loading="${eager ? "eager" : "lazy"}" decoding="async"${priority} referrerpolicy="no-referrer">${extra}</span>`;
 }
 function glyph(path) {
   return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -140,15 +143,15 @@ function noteBlock(key, note) {
   if (state.editing === key) return `<textarea class="note-box" data-note-key="${esc(key)}">${esc(note || "")}</textarea>`;
   return note ? `<p class="note">${esc(note)}</p>` : "";
 }
-function igCard(item) {
+function igCard(item, index = 99) {
   const days = when(item.published);
   const mult = multiple(item.multiplier);
-  return `<article class="tile"><button class="tile-main" type="button" data-open="ig" data-id="${esc(item.id)}">${poster(item.poster, item.rank ? `<span class="rank">${esc(item.rank)}</span>` : "")}<span><span class="title">${esc(item.title || item.hook || "Untitled")}</span><span class="meta"><span>@${esc(item.creator || "")}</span>${mult ? `<span class="x">${esc(mult)}</span>` : ""}<span>${esc(days)}</span></span><span class="hook">${esc(item.hook || "")}</span></span></button>${actions(item, "ig")}</article>`;
+  return `<article class="tile"><button class="tile-main" type="button" data-open="ig" data-id="${esc(item.id)}">${poster(item.poster, item.rank ? `<span class="rank">${esc(item.rank)}</span>` : "", index)}<span><span class="title">${esc(item.title || item.hook || "Untitled")}</span><span class="meta"><span>@${esc(item.creator || "")}</span>${mult ? `<span class="x">${esc(mult)}</span>` : ""}<span>${esc(days)}</span></span><span class="hook">${esc(item.hook || "")}</span></span></button>${actions(item, "ig")}</article>`;
 }
-function ytCard(item) {
+function ytCard(item, index = 99) {
   const mult = multiple(item.multiplier);
   const badge = mult ? `<span class="yt-x">${esc(mult)} median</span>` : "";
-  return `<article class="yt-card"><button class="yt-main" type="button" data-open="yt" data-id="${esc(item.id)}">${poster(item.poster, `yt${badge}`)}<span class="title">${esc(item.title)}</span><span class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.subs))} subs · ${esc(compact(item.views))} views · ${esc(when(item.published))}</span><span class="hook">${esc(item.hook || "")}</span></button>${actions(item, "yt")}</article>`;
+  return `<article class="yt-card"><button class="yt-main" type="button" data-open="yt" data-id="${esc(item.id)}">${poster(item.poster, `yt${badge}`, index)}<span class="title">${esc(item.title)}</span><span class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.subs))} subs · ${esc(compact(item.views))} views · ${esc(when(item.published))}</span><span class="hook">${esc(item.hook || "")}</span></button>${actions(item, "yt")}</article>`;
 }
 function findItem(platform, id) {
   const ig = state.data.ig;
@@ -180,7 +183,7 @@ function renderPicks() {
   const segs = [["all", `All ${picks.length}`], ["previous", `Previous ${state.data.ig.history.reduce((n, group) => n + group.picks.length, 0)}`], ["fresh", `Recent ${fresh.length}`], ["bench", `Benchmarks ${bench}`]];
   let body = "";
   if (state.igSeg === "previous") {
-    body = state.data.ig.history.map((group) => `<section><p class="hint">${esc(group.label)} · Retired ${esc(group.retired_on)}</p><div class="list">${group.picks.map(igCard).join("")}</div></section>`).join("");
+    body = state.data.ig.history.map((group) => `<section><p class="hint">${esc(group.label)} · Retired ${esc(group.retired_on)}</p><div class="list">${group.picks.map((item, index) => igCard(item, index)).join("")}</div></section>`).join("");
   } else {
     const list = picks.filter((item) => {
       const days = daysOf(item.published) ?? 999;
@@ -188,18 +191,18 @@ function renderPicks() {
       if (state.igSeg === "bench") return days > 30;
       return true;
     });
-    body = `<div class="list">${list.map(igCard).join("")}</div>`;
+    body = `<div class="list">${list.map((item, index) => igCard(item, index)).join("")}</div>`;
   }
   return `<div class="view-head"><div><h2>Top picks</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-seg="${key}" aria-pressed="${state.igSeg === key}">${label}</button>`).join("")}</div></div>${body}`;
 }
 function renderSimple(title, items, platform) {
-  const cards = items.map((item) => platform === "yt" ? ytCard(item) : igCard(item)).join("");
+  const cards = items.map((item, index) => platform === "yt" ? ytCard(item, index) : igCard(item, index)).join("");
   return `<div class="view-head"><div><h2>${esc(title)}</h2><p class="updated">${esc(updatedLine())}</p></div></div><div class="list${platform === "yt" ? " yt-grid" : ""}">${cards || `<p class="hint">Nothing in this list.</p>`}</div>`;
 }
 function renderYoutube() {
   const lists = state.data.yt;
   const segs = [["mine", `My winners ${lists.mine.length}`], ["peers", `Peers ${lists.peers.length}`], ["broad", `Broad business ${lists.broad.length}`], ["big", `Big channels ${lists.big.length}`]];
-  return `<div class="view-head"><div><h2>YouTube</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-yt="${key}" aria-pressed="${state.yt === key}">${label}</button>`).join("")}</div></div><div class="list yt-grid">${(lists[state.yt] || []).map(ytCard).join("")}</div>`;
+  return `<div class="view-head"><div><h2>YouTube</h2><p class="updated">${esc(updatedLine())}</p></div><div class="seg">${segs.map(([key, label]) => `<button class="chip" type="button" data-yt="${key}" aria-pressed="${state.yt === key}">${label}</button>`).join("")}</div></div><div class="list yt-grid">${(lists[state.yt] || []).map((item, index) => ytCard(item, index)).join("")}</div>`;
 }
 function ownerName(email) {
   const known = state.users.find((user) => user.email === email);
@@ -230,7 +233,7 @@ function renderSaved() {
     return true;
   });
   const packs = state.swipe.filter((row) => allowRow(row.email, state.packOwners));
-  const ideaCards = rows.map((row) => {
+  const ideaCards = rows.map((row, index) => {
     const snap = row.snapshot || {};
     const key = `idea:${row.platform}:${row.item_id}`;
     const own = row.email === state.me.email;
@@ -238,15 +241,17 @@ function renderSaved() {
     if (row.platform === "yt") {
       const mult = multiple(snap.multiplier);
       const badge = mult ? `<span class="yt-x">${esc(mult)}</span>` : "";
-      return `<article class="yt-card">${poster(snap.poster, `yt${badge}`)}<h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">${esc(snap.creator || "YouTube")}</p>${snap.hook ? `<p class="hook">${esc(snap.hook)}</p>` : ""}${foot}</article>`;
+      return `<article class="yt-card">${poster(snap.poster, `yt${badge}`, index)}<h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">${esc(snap.creator || "YouTube")}</p>${snap.hook ? `<p class="hook">${esc(snap.hook)}</p>` : ""}${foot}</article>`;
     }
     const mult = multiple(snap.multiplier);
-    return `<article class="poster-tile"><span class="poster-still">${snap.poster ? `<img alt="" src="${esc(snap.poster)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ""}</span><h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">@${esc(snap.creator || "instagram")}${mult ? ` · <span class="x">${esc(mult)}</span>` : ""}</p>${foot}</article>`;
+    const eager = index < 4;
+    const priority = index === 0 ? " fetchpriority=\"high\"" : "";
+    return `<article class="poster-tile"><span class="poster-still">${snap.poster ? `<img alt="" src="${esc(snap.poster)}" loading="${eager ? "eager" : "lazy"}" decoding="async"${priority} referrerpolicy="no-referrer">` : ""}</span><h2 class="title">${esc(snap.title || row.item_id)}</h2><p class="meta">@${esc(snap.creator || "instagram")}${mult ? ` · <span class="x">${esc(mult)}</span>` : ""}</p>${foot}</article>`;
   }).join("");
-  const packCards = packs.map((row) => {
+  const packCards = packs.map((row, index) => {
     const key = `pack:${row.id}`;
     const own = row.email === state.me.email;
-    return `<article class="yt-card">${poster(row.poster, "yt")}<h2 class="title">${esc(row.title || row.url)}</h2><p class="meta">${esc(row.channel || "")}</p><div class="card-foot">${personRow(row)}${cardMenu(key, own, own || state.me.role === "admin")}</div>${noteBlock(key, row.note)}</article>`;
+    return `<article class="yt-card">${poster(row.poster, "yt", index)}<h2 class="title">${esc(row.title || row.url)}</h2><p class="meta">${esc(row.channel || "")}</p><div class="card-foot">${personRow(row)}${cardMenu(key, own, own || state.me.role === "admin")}</div>${noteBlock(key, row.note)}</article>`;
   }).join("");
   const who = (setName) => `<div class="filter-group"><span class="filter-label" aria-hidden="true">Who</span><div class="chips" role="group" aria-label="Who saved">${ownerChips(setName)}</div></div>`;
   const filters = ideas
@@ -262,7 +267,7 @@ function renderAdmin() {
 }
 function render() {
   const main = $("#main");
-  $("#built-line").textContent = state.data ? updatedLine().split(" | ")[0].replace("Updated ", "Built ") : "";
+  $("#built-line").textContent = state.data ? updatedLine().split(" | ")[0].replace("Updated ", "Built ") : "Built …";
   $("#about-copy").textContent = "Reels and YouTube lists load after sign-in. Saves live on the account. Watched stays in this browser.";
   const who = $("#who");
   if (who) who.textContent = `${state.me.name || state.me.email} · ${state.me.role}`;
@@ -275,6 +280,8 @@ function render() {
   const savedMode = location.hash === "#saved";
   const adminMode = location.hash === "#admin";
   $("#ig-nav").hidden = state.platform !== "ig" || savedMode || adminMode;
+  main.setAttribute("aria-busy", state.data ? "false" : "true");
+  if (!state.data) { main.innerHTML = skeleton(); return; }
   if (adminMode) { main.innerHTML = renderAdmin(); return; }
   if (savedMode) { main.innerHTML = renderSaved(); return; }
   if (state.platform === "yt") { main.innerHTML = renderYoutube(); return; }
@@ -284,22 +291,110 @@ function render() {
   else main.innerHTML = renderPicks();
   $$("#ig-nav .tab").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.ig === state.ig)));
 }
+const CACHE_DB = "outlier.bundle.v1";
+function cacheDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(CACHE_DB, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore("kv");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function cacheGet() {
+  try {
+    const db = await cacheDb();
+    return await new Promise((resolve) => {
+      const query = db.transaction("kv").objectStore("kv").get("bundle");
+      query.onsuccess = () => resolve(query.result || null);
+      query.onerror = () => resolve(null);
+    });
+  } catch { return null; }
+}
+async function cacheSet(etag, data) {
+  try {
+    const db = await cacheDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("kv", "readwrite");
+      tx.objectStore("kv").put({ etag, data }, "bundle");
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch { /* a private browser can still use the network */ }
+}
+async function cacheClear() {
+  await new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(CACHE_DB);
+    request.onsuccess = resolve;
+    request.onerror = resolve;
+    request.onblocked = resolve;
+  });
+}
+function skeletonTitle() {
+  if (location.hash === "#saved") return "Saved";
+  if (location.hash === "#admin") return "People";
+  if (state.platform === "yt") return "YouTube";
+  if (state.ig === "explore") return "Explore";
+  if (state.ig === "inspire") return "Inspiration";
+  if (state.ig === "shortlist") return "Shortlist";
+  return "Top picks";
+}
+function skeleton() {
+  const youtube = location.hash === "#saved" || state.platform === "yt";
+  const chips = '<span class="sk sk-chip"></span><span class="sk sk-chip"></span><span class="sk sk-chip"></span>';
+  const head = `<div class="view-head"><div><h2>${skeletonTitle()}</h2><span class="sk sk-updated"></span></div><div class="seg" aria-hidden="true">${chips}</div></div>`;
+  if (location.hash === "#admin") return head;
+  if (youtube) {
+    const cards = Array.from({ length: 6 }, () => '<article class="yt-card skeleton-card" aria-hidden="true"><span class="yt-still sk"></span><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span></article>').join("");
+    return `${head}<div class="list yt-grid">${cards}</div>`;
+  }
+  const tiles = Array.from({ length: 3 }, () => '<article class="tile skeleton-card" aria-hidden="true"><div class="tile-main"><span class="still sk"></span><span class="sk-copy"><span class="sk sk-line wide"></span><span class="sk sk-line mid"></span></span></div><div class="actions"><span class="sk sk-btn"></span></div></article>').join("");
+  return `${head}<div class="list">${tiles}</div>`;
+}
 async function refreshSaves() {
-  const payload = await api("/outlier/api/saves");
   const users = new Map((state.users.length ? state.users : [state.me]).map((user) => [user.email, user.name]));
+  const [payload, swipe] = await Promise.all([api("/outlier/api/saves"), api("/outlier/api/swipe")]);
   state.saves = payload.saves.map((row) => ({ ...row, name: users.get(row.email) || row.name || "" }));
-  const swipe = await api("/outlier/api/swipe");
   state.swipe = swipe.items.map((row) => ({ ...row, name: users.get(row.email) || row.name || "" }));
 }
-async function bootApp() {
-  state.data = await api("/outlier/api/data");
-  if (state.me.role === "admin") {
-    try { state.users = (await api("/outlier/api/admin/users")).users; } catch { state.users = []; }
+async function revalidate(cached) {
+  if (cached && cached.etag) {
+    const probe = await fetch("/outlier/api/data/version", { credentials: "same-origin", headers: { "if-none-match": cached.etag } });
+    if (probe.status === 304) return;
+    if (probe.ok) {
+      const version = await probe.json();
+      if (version.etag === cached.etag) return;
+    }
   }
-  await refreshSaves();
+  const headers = cached && cached.etag ? { "if-none-match": cached.etag } : {};
+  const response = await fetch("/outlier/api/data", { credentials: "same-origin", headers });
+  if (response.status === 304) return;
+  if (!response.ok) {
+    if (!state.data) throw new Error("The research bundle is not loaded yet.");
+    return;
+  }
+  state.data = await response.json();
+  await cacheSet(response.headers.get("etag"), state.data);
+  render();
+}
+async function bootApp() {
   $("#login").hidden = true;
   $("#app").hidden = false;
   if (!location.hash) location.hash = "#picks";
+  const cached = await cacheGet();
+  if (cached && cached.data) {
+    state.data = cached.data;
+    render();
+  } else {
+    render();
+  }
+  const jobs = [
+    revalidate(cached),
+    refreshSaves().then(() => { if (state.data) render(); }).catch(() => {}),
+  ];
+  if (state.me.role === "admin") {
+    jobs.push(api("/outlier/api/admin/users").then((payload) => { state.users = payload.users; }).catch(() => { state.users = []; }));
+  }
+  await Promise.all(jobs);
   render();
 }
 async function start() {
@@ -420,6 +515,7 @@ document.addEventListener("click", async (event) => {
     return;
   }
   if (event.target.closest("#logout-btn")) {
+    await cacheClear();
     await api("/outlier/api/logout", { method: "POST", body: {} });
     location.reload();
     return;

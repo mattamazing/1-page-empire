@@ -1,4 +1,4 @@
-import { fail, json, listUsers, openStore, readJson, requireUser, youtubeId } from "./outlier-lib.mjs";
+import { fail, json, listUsers, openStore, readJson, requireUser, rowsFromStore, writeRows, youtubeId } from "./outlier-lib.mjs";
 
 export const config = { path: "/outlier/api/swipe" };
 
@@ -6,13 +6,7 @@ const STEAL = new Set(["title", "thumbnail", "both"]);
 
 async function listAll() {
   const store = openStore("outlier-swipe");
-  const listed = await store.list();
-  const rows = [];
-  for (const blob of listed.blobs || []) {
-    const row = await store.get(blob.key, { type: "json" });
-    if (row) rows.push(row);
-  }
-  rows.sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
+  const rows = (await rowsFromStore(store)).slice().sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
   return { store, rows };
 }
 
@@ -76,7 +70,11 @@ export default async function handler(req) {
       note: String((body && body.note) || "").slice(0, 2000),
       saved_at: new Date().toISOString(),
     };
-    await openStore("outlier-swipe").setJSON(id, row);
+    const store = openStore("outlier-swipe");
+    await store.setJSON(id, row);
+    const rows = (await rowsFromStore(store)).filter((item) => item.id !== id);
+    rows.push(row);
+    await writeRows(store, rows);
     return json({ item: row }, 201);
   }
   const id = String((body && body.id) || "");
@@ -88,6 +86,7 @@ export default async function handler(req) {
   if (req.method === "DELETE") {
     if (!owns && !admin) return fail(403, "You can only delete your own packaging notes.");
     await store.delete(id);
+    await writeRows(store, (await rowsFromStore(store)).filter((row) => row.id !== id));
     return json({ ok: true });
   }
   if (req.method === "PATCH") {
@@ -100,6 +99,7 @@ export default async function handler(req) {
       note: body.note == null ? existing.note : String(body.note).slice(0, 2000),
     };
     await store.setJSON(id, row);
+    await writeRows(store, (await rowsFromStore(store)).map((item) => item.id === id ? row : item));
     return json({ item: row });
   }
   return fail(405, "Use GET, POST, PATCH, or DELETE.");
