@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reviews | Mindflow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">MIND<span>FLOW</span></a>
+    <nav class="nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">🛒<span class="cart-count" id="cart-count">0</span></button>
+      <button class="menu-toggle" onclick="toggleMobileNav()">☰</button>
+    </div>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <h1 class="section-title">45,000+ Reviews</h1>
+    <div style="text-align:center;margin-bottom:32px;">
+      <div class="stars" style="font-size:32px;">★★★★★</div>
+      <p style="font-size:20px;font-weight:700;">4.7 out of 5</p>
+      <p style="color:#666;">From 790K+ customers</p>
+    </div>
+
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Dr. Tonia Chandler, DNP</span><span class="stars">★★★★★</span></div>
+      <p>“As a healthcare provider, I’m mindful about what I use daily. It delivers smooth, steady mental energy and supports clarity without feeling overstimulating. Fits easily into a busy day.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Rachel Laborde, NTP</span><span class="stars">★★★★★</span></div>
+      <p>“Husband noticed great flavor without acidity. Balanced rich taste. No crash, mental clarity, sustained energy. Definitely a fan.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Jenica Weaver, DPT</span><span class="stars">★★★★★</span></div>
+      <p>“Great start to the day. Energized but focused, without jitters. Mixes easily into water, smooth taste. Recommend to level up morning coffee.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Sarah P.</span><span class="stars">★★★★★</span></div>
+      <p>“Finally something that works without the jitters. I feel locked in all day. The taste is amazing — no earthy mushroom flavor at all.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Mike T.</span><span class="stars">★★★★★</span></div>
+      <p>“Don’t crash at 2pm anymore. 30-second routine is perfect for busy mornings. Low-acid and clean.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Jessica L.</span><span class="stars">★★★★★</span></div>
+      <p>“Brain fog is gone. I can focus on reading again. Smooth, rich coffee flavor.”</p>
+    </div>
+
+    <p style="text-align:center;margin-top:32px;color:#666;">What people like most: Smooth taste · 30-second routine · Low-acid coffee · Steady energy without jitters or crash</p>
+    <p style="text-align:center;margin-top:24px;"><a href="index.html" class="btn-primary" style="display:inline-block;width:auto;padding:14px 32px;">Try Mindflow</a></p>
+  </section>
+
+  <footer class="footer"><p style="text-align:center;">© 2026 Mindflow</p></footer>
+
+  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">Your Cart <button onclick="closeCart()" style="background:none;font-size:24px;">×</button></div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="empty-cart" id="empty-cart">Your cart is empty</div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="cart-total">$0.00</span></div>
+      <button class="btn-primary">Checkout</button>
+    </div>
+  </div>
+  <script src="js/cart.js"></script>
+</body>
+</html>

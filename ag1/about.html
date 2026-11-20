@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | Mindflow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">MIND<span>FLOW</span></a>
+    <nav class="nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">🛒<span class="cart-count" id="cart-count">0</span></button>
+      <button class="menu-toggle" onclick="toggleMobileNav()">☰</button>
+    </div>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <h1 class="section-title">About Mindflow</h1>
+    <div style="max-width:700px;margin:0 auto;">
+      <img src="images/kEUd9.jpg" alt="Mindflow lifestyle" style="border-radius:12px;margin-bottom:24px;">
+      <p style="margin-bottom:16px;">
+        Mindflow is a premium instant coffee created with input from a doctor and produced by Lifeboost Coffee. 
+        It combines low-acid, organic single-origin Arabica with clinically studied nootropics and dual-extracted mushrooms 
+        to support focus, mental clarity, and steady energy — without the jitters or crash.
+      </p>
+      <p style="margin-bottom:16px;">
+        Lifeboost grows coffee in Central America, shade-grown at high elevation, and third-party tests every batch for heavy metals, 
+        allergens, mycotoxins, mold, and 450+ potential contaminants. No synthetic fillers. No cheap mycelium powder. Real fruiting body extracts.
+      </p>
+      <h3 style="margin:24px 0 12px;">The Ritual</h3>
+      <p>One scoop. Hot or cold water. Froth 10–15 seconds. Done in 30 seconds. No equipment, no mess, no waiting. Perfect for busy mornings, desks, or travel.</p>
+      <h3 style="margin:24px 0 12px;">Our Promise</h3>
+      <ul style="margin-left:20px;color:#444;">
+        <li>Clean ingredients you can feel good about</li>
+        <li>Smooth, delicious coffee flavor (no earthy aftertaste)</li>
+        <li>60-day money-back guarantee</li>
+        <li>One-time purchases — no forced subscriptions</li>
+      </ul>
+      <p style="text-align:center;margin-top:32px;"><a href="index.html" class="btn-primary" style="display:inline-block;width:auto;padding:14px 32px;">Shop Mindflow</a></p>
+    </div>
+  </section>
+
+  <footer class="footer"><p style="text-align:center;">© 2026 Mindflow / Lifeboost Coffee</p></footer>
+
+  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">Your Cart <button onclick="closeCart()" style="background:none;font-size:24px;">×</button></div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="empty-cart" id="empty-cart">Your cart is empty</div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="cart-total">$0.00</span></div>
+      <button class="btn-primary">Checkout</button>
+    </div>
+  </div>
+  <script src="js/cart.js"></script>
+</body>
+</html>

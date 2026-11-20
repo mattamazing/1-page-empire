@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ | Mindflow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">MIND<span>FLOW</span></a>
+    <nav class="nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">🛒<span class="cart-count" id="cart-count">0</span></button>
+      <button class="menu-toggle" onclick="toggleMobileNav()">☰</button>
+    </div>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+  </header>
+
+  <section class="section" style="max-width:700px;margin:0 auto;">
+    <h1 class="section-title">Frequently Asked Questions</h1>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What is Mindflow? <span>+</span></button>
+      <div class="faq-answer">Mindflow is a premium instant coffee infused with clinically studied nootropics and adaptogens like Alpha-GPC, Lion’s Mane, Chaga, and CognatiQ. Designed to support focus, memory, mood, and long-term brain health in one smooth cup.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">How many servings in one bag? <span>+</span></button>
+      <div class="faq-answer">Each bag contains 25 servings.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">How is Mindflow different from regular coffee? <span>+</span></button>
+      <div class="faq-answer">Regular coffee gives a caffeine boost. Mindflow adds enhanced focus, cognitive clarity, mood support, and brain benefits with mushrooms, collagen, electrolytes, and nootropics — plus a low-acid, smooth finish and 30-second prep.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What does it taste like? <span>+</span></button>
+      <div class="faq-answer">Smooth, rich coffee flavor. The mushroom extracts don’t add an earthy or mushroomy taste. Clean finish, drinkable black, with milk, or over ice.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">How do I make it? <span>+</span></button>
+      <div class="faq-answer">Add 1 tablespoon (one scoop) to a mug. Pour in 4–8 oz of hot or cold water and mix/froth for 10–15 seconds. Customize with milk, ice, or sweetener. Ready in 30 seconds or less.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Is this a subscription? <span>+</span></button>
+      <div class="faq-answer">No. Every order is a one-time purchase with no recurring charges. You can reorder whenever you want.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Is Mindflow vegan or dairy-free? <span>+</span></button>
+      <div class="faq-answer">It contains grass-fed bovine collagen, so it is not vegan. It has no dairy ingredients and is gluten-free.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Does it contain caffeine? <span>+</span></button>
+      <div class="faq-answer">Yes — natural caffeine from organic instant coffee. Combined with electrolytes and mushrooms for a smoother, steadier feel.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What is your return policy? <span>+</span></button>
+      <div class="faq-answer">60-day money-back guarantee. Contact us to start a return. Refund of product price (shipping may be deducted). We recommend tracked service.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Where do you ship? <span>+</span></button>
+      <div class="faq-answer">U.S. addresses including Alaska, Hawaii, and Puerto Rico. Free shipping on 6-bag orders. Processing 1–4 business days.</div>
+    </div>
+  </section>
+
+  <footer class="footer"><p style="text-align:center;">© 2026 Mindflow</p></footer>
+
+  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">Your Cart <button onclick="closeCart()" style="background:none;font-size:24px;">×</button></div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="empty-cart" id="empty-cart">Your cart is empty</div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="cart-total">$0.00</span></div>
+      <button class="btn-primary">Checkout</button>
+    </div>
+  </div>
+  <script src="js/cart.js"></script>
+</body>
+</html>

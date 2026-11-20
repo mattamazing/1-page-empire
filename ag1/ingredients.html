@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingredients & Science | Mindflow</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="logo">MIND<span>FLOW</span></a>
+    <nav class="nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">🛒<span class="cart-count" id="cart-count">0</span></button>
+      <button class="menu-toggle" onclick="toggleMobileNav()">☰</button>
+    </div>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <h1 class="section-title">Ingredients & Nutrition</h1>
+    <p style="text-align:center;max-width:600px;margin:0 auto 32px;color:#666;">
+      Clean, third-party tested ingredients. No synthetic fillers, no cheap mycelium, no added sugar. Dual-extracted mushrooms. Lab-tested for 450+ contaminants.
+    </p>
+
+    <h2 style="margin:32px 0 16px;">Supplement Facts</h2>
+    <table class="nutrition-table">
+      <tr><th>Serving Size</th><td>1 scoop (~1 tbsp / 6.5g)</td></tr>
+      <tr><th>Servings Per Bag</th><td>25</td></tr>
+      <tr><th>Calories</th><td>20</td></tr>
+      <tr><th>Total Carbohydrate</th><td>2g</td></tr>
+      <tr><th>Protein</th><td>3g</td></tr>
+      <tr><th>Added Sugars</th><td>0g</td></tr>
+    </table>
+
+    <h2 style="margin:32px 0 16px;">Key Ingredients</h2>
+    <div class="ingredients-list">
+      <div class="ingredient"><span class="ingredient-icon">☕</span><div><strong>Organic Instant Coffee (Low-Acid Arabica)</strong><br>Single-origin from Central America. Natural caffeine. Smooth finish. Third-party tested.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">🧠</span><div><strong>CognatiQ® Coffee Fruit Extract</strong><br>Studied for supporting everyday focus and healthy BDNF levels as part of a balanced routine.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">⚡</span><div><strong>Alpha-GPC</strong><br>Highly bioavailable source of choline to support attention and neurotransmitter activity.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">🍄</span><div><strong>RealLion’s Mane® Extract</strong><br>Dual-extracted organic fruiting body. Traditional support for mental clarity.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">🍄</span><div><strong>RealChaga™ Extract</strong><br>Dual-extracted organic fruiting body. Natural antioxidants.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">💧</span><div><strong>SolarSea® / ElectroPrime® Electrolytes</strong><br>Sea-mineral complex with potassium. Helps offset caffeine’s diuretic effect.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">💪</span><div><strong>Grass-Fed Bovine Collagen</strong><br>Mixes smoothly. Supports a clean, sustained feel. Dairy-free, not vegan.</div></div>
+    </div>
+
+    <p style="margin-top:32px;font-size:14px;color:#666;">
+      <strong>Other:</strong> Natural flavors. Gluten-free. Contains natural caffeine. Not evaluated by the FDA. Not intended to diagnose, treat, cure, or prevent any disease.<br>
+      Consult your healthcare provider if pregnant, nursing, or on medication.
+    </p>
+
+    <p style="text-align:center;margin-top:32px;"><a href="index.html" class="btn-primary" style="display:inline-block;width:auto;padding:14px 32px;">Shop Mindflow</a></p>
+  </section>
+
+  <footer class="footer"><p style="text-align:center;">© 2026 Mindflow</p></footer>
+
+  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">Your Cart <button onclick="closeCart()" style="background:none;font-size:24px;">×</button></div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="empty-cart" id="empty-cart">Your cart is empty</div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="cart-total">$0.00</span></div>
+      <button class="btn-primary">Checkout</button>
+    </div>
+  </div>
+  <script src="js/cart.js"></script>
+</body>
+</html>

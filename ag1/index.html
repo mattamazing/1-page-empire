@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mindflow Instant Coffee | Doctor-Formulated Focus Coffee</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <a href="index.html" class="logo">MIND<span>FLOW</span></a>
+    <nav class="nav">
+      <a href="index.html">Shop</a>
+      <a href="ingredients.html">Science</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">🛒<span class="cart-count" id="cart-count">0</span></button>
+      <button class="menu-toggle" onclick="toggleMobileNav()">☰</button>
+    </div>
+    <div class="mobile-nav" id="mobile-nav">
+      <a href="index.html" onclick="toggleMobileNav()">Shop</a>
+      <a href="ingredients.html" onclick="toggleMobileNav()">Science</a>
+      <a href="reviews.html" onclick="toggleMobileNav()">Reviews</a>
+      <a href="about.html" onclick="toggleMobileNav()">About</a>
+      <a href="faq.html" onclick="toggleMobileNav()">FAQ</a>
+    </div>
+  </header>
+
+  <div class="sale-banner">
+    🔥 <strong>EARLY BLACK FRIDAY</strong> — Up to 55% off + Free Starter Kit · Doctor-Formulated · Lab-Tested · 60-Day Guarantee
+  </div>
+
+  <!-- Hero / Product -->
+  <section class="hero">
+    <div class="product-gallery">
+      <img src="images/4Kfrz.jpg" alt="Mindflow Instant Coffee Pouch">
+      <img src="images/kEUd9.jpg" alt="Mindflow lifestyle - coffee in glass">
+      <img src="images/06Tif.jpg" alt="Welcome Kit with frother and scoop">
+    </div>
+    <div class="product-info">
+      <div class="badges">
+        <span class="badge">BEST SELLER</span>
+        <span class="badge gold">4.7 ★ 45K+ Reviews</span>
+      </div>
+      <h1 class="product-title">Mindflow Instant Coffee</h1>
+      <div class="rating">
+        <span class="stars">★★★★★</span>
+        <span>4.7 out of 5 · 45,000+ verified reviews · 790K+ customers</span>
+      </div>
+      <p class="product-desc">
+        Doctor-formulated focus coffee that supports steady energy, mental clarity, and a smoother morning routine. 
+        Low-acid organic Arabica blended with lion’s mane, chaga, collagen, Alpha-GPC, electrolytes, and CognatiQ® — ready in 30 seconds.
+      </p>
+      <p class="flavor">Smooth, rich coffee flavor with no earthy or mushroomy aftertaste. Clean finish, drinkable black, with milk, or over ice.</p>
+
+      <div class="offers">
+        <!-- Best Value -->
+        <div class="offer-card best">
+          <div class="offer-header">
+            <div>
+              <div class="offer-title">6-Bag Bundle</div>
+              <div class="per-serving">150 servings · $0.92/serving</div>
+            </div>
+            <div class="price">$138 <s>$270</s></div>
+          </div>
+          <ul class="offer-benefits">
+            <li>Save 55% vs retail</li>
+            <li>Free Welcome Kit ($37 value) — frother + scoop</li>
+            <li>Free U.S. shipping</li>
+            <li>60-day money-back guarantee</li>
+            <li>One-time purchase — no subscription</li>
+          </ul>
+          <div class="welcome-kit">
+            <img src="images/06Tif.jpg" alt="Frother">
+            <img src="images/4Kfrz.jpg" alt="Pouch">
+          </div>
+          <button class="btn-primary" onclick="addToCart('Mindflow 6-Bag Bundle + Free Kit', 138, 'images/4Kfrz.jpg')">Add to Cart — Best Value</button>
+        </div>
+
+        <!-- 3-Bag -->
+        <div class="offer-card">
+          <div class="offer-header">
+            <div>
+              <div class="offer-title">3-Bag Supply</div>
+              <div class="per-serving">75 servings · $1.20/serving</div>
+            </div>
+            <div class="price">$90 <s>$135</s></div>
+          </div>
+          <ul class="offer-benefits">
+            <li>Save 33%</li>
+            <li>Free metal scoop</li>
+            <li>60-day guarantee</li>
+          </ul>
+          <button class="btn-primary" onclick="addToCart('Mindflow 3-Bag Supply', 90, 'images/4Kfrz.jpg')">Add to Cart</button>
+        </div>
+
+        <!-- Single -->
+        <div class="offer-card">
+          <div class="offer-header">
+            <div>
+              <div class="offer-title">Single Bag</div>
+              <div class="per-serving">25 servings · $1.80/serving</div>
+            </div>
+            <div class="price">$45</div>
+          </div>
+          <ul class="offer-benefits">
+            <li>Try it risk-free</li>
+            <li>60-day money-back guarantee</li>
+          </ul>
+          <button class="btn-secondary" onclick="addToCart('Mindflow Single Bag', 45, 'images/4Kfrz.jpg')">Add to Cart</button>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:#666;margin-top:12px;text-align:center;">
+        Free shipping on 6-bag orders. 60-day happiness guarantee. Pause or reorder anytime.
+      </p>
+    </div>
+  </section>
+
+  <!-- Stats / Social Proof -->
+  <section class="section" style="background:#f8f8f6;">
+    <h2 class="section-title">Why 790K+ Customers Switched</h2>
+    <div class="stats">
+      <div class="stat"><div class="stat-num">4.7</div><div class="stat-label">Average Rating</div></div>
+      <div class="stat"><div class="stat-num">45K+</div><div class="stat-label">Verified Reviews</div></div>
+      <div class="stat"><div class="stat-num">30s</div><div class="stat-label">Ready to Drink</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">Jitters or Crash</div></div>
+    </div>
+    <p style="text-align:center;max-width:600px;margin:0 auto;color:#666;">
+      Customers love the smooth taste compared to other mushroom coffees, the 30-second routine, low-acid coffee, and steady energy without the afternoon slump.
+    </p>
+  </section>
+
+  <!-- What to Expect -->
+  <section class="section">
+    <h2 class="section-title">What to Expect</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <h4>First Cup</h4>
+        <p>Smooth, rich coffee flavor. Clean energy kicks in within minutes. No harsh acidic bite or earthy aftertaste.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>First Week</h4>
+        <p>More consistent morning focus. Easier routine — scoop, water, froth. Many notice less reliance on a second or third cup.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>30 Days</h4>
+        <p>Steady energy through long days. Calmer start. Customers report better mental clarity and fewer afternoon crashes.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>60–90 Days</h4>
+        <p>Part of the daily ritual. Supports focus and cognitive performance as part of a balanced routine with clean ingredients.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="section" style="background:#f8f8f6;">
+    <h2 class="section-title">Everything in One Easy Scoop</h2>
+    <div class="ingredients-list">
+      <div class="ingredient"><span class="ingredient-icon">☕</span><div><strong>Low-Acid Organic Arabica</strong><br>Single-origin, third-party tested. Smooth natural caffeine without the harsh edge.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">🍄</span><div><strong>Lion’s Mane + Chaga</strong><br>Dual-extracted real fruiting body mushrooms for cognitive support and antioxidants.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">🧠</span><div><strong>CognatiQ® + Alpha-GPC</strong><br>Coffee fruit extract and choline source studied for everyday focus and mental performance.</div></div>
+      <div class="ingredient"><span class="ingredient-icon">💪</span><div><strong>Grass-Fed Collagen + Electrolytes</strong><br>Mixes smoothly. Supports hydration and a clean, sustained feel.</div></div>
+    </div>
+    <p style="text-align:center;margin-top:20px;"><a href="ingredients.html" class="btn-primary" style="display:inline-block;width:auto;padding:12px 32px;">See Full Ingredients & Nutrition</a></p>
+  </section>
+
+  <!-- Reviews preview -->
+  <section class="section">
+    <h2 class="section-title">Real Customer Reviews</h2>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Sarah P.</span><span class="stars">★★★★★</span></div>
+      <p>“Finally something that works without the jitters. I feel locked in all day. The taste is actually good coffee — no mushroom aftertaste.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Mike T.</span><span class="stars">★★★★★</span></div>
+      <p>“The taste is amazing and I don’t crash at 2pm anymore. 30-second routine fits my mornings perfectly.”</p>
+    </div>
+    <div class="review">
+      <div class="review-header"><span class="reviewer">Jessica L.</span><span class="stars">★★★★★</span></div>
+      <p>“My brain fog is gone. I can actually focus on my reading again. Low-acid and smooth.”</p>
+    </div>
+    <p style="text-align:center;margin-top:16px;"><a href="reviews.html">See all 45,000+ reviews →</a></p>
+  </section>
+
+  <!-- Guarantee -->
+  <section class="section" style="background:#f4faf6;text-align:center;">
+    <h2 class="section-title">60-Day Money-Back Guarantee</h2>
+    <p style="max-width:500px;margin:0 auto 20px;">Try Mindflow risk-free. If it’s not the best cup of your day, we’ll refund you. No questions asked.</p>
+    <button class="btn-primary" style="max-width:300px;" onclick="document.querySelector('.offers').scrollIntoView({behavior:'smooth'})">Shop the Sale</button>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <h4>MINDFLOW</h4>
+        <p>Doctor-formulated functional coffee by Lifeboost. Clean energy. Steady focus. 30-second ritual.</p>
+      </div>
+      <div>
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="index.html">Mindflow Instant</a></li>
+          <li><a href="shop.html">Shop All</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="ingredients.html">Ingredients & Science</a></li>
+          <li><a href="reviews.html">Reviews</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Shipping</a></li>
+          <li><a href="#">Returns</a></li>
+        </ul>
+      </div>
+    </div>
+    <p style="text-align:center;opacity:0.7;font-size:12px;">© 2026 Mindflow / Lifeboost Coffee. These statements have not been evaluated by the FDA. Not intended to diagnose, treat, cure, or prevent any disease.</p>
+  </footer>
+
+  <!-- Cart Drawer -->
+  <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      Your Cart
+      <button onclick="closeCart()" style="background:none;font-size:24px;">×</button>
+    </div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="empty-cart" id="empty-cart">Your cart is empty</div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="cart-total">$0.00</span></div>
+      <button class="btn-primary" onclick="alert('Checkout placeholder — in a real funnel this would go to payment.')">Checkout</button>
+      <button class="btn-secondary" onclick="closeCart()">Continue Shopping</button>
+    </div>
+  </div>
+
+  <script src="js/cart.js"></script>
+</body>
+</html>
