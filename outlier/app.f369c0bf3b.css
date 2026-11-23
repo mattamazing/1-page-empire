@@ -40,6 +40,8 @@ h1{font-size:18px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .cands-head h2{font-size:20px;font-weight:500}
 .cands .tcount{margin-left:6px;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
 .cands-head .hint{margin-top:4px;font-size:13px;color:var(--muted)}
+.sub{color:var(--muted);font-weight:400;white-space:nowrap}
+.legacy-note{display:block;margin:0;font-size:12px;font-weight:400;color:var(--muted)}
 .cands > .chips{margin-bottom:24px}
 .tier{display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border-radius:999px;font:600 11px/1 var(--font);letter-spacing:.01em;border:1px solid transparent;white-space:nowrap}
 .tier-top10{background:#1A1A1A;color:#fff}

@@ -24,6 +24,7 @@
   --focus:#2D5F6A;
   --font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --pad:24px;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -68,6 +69,8 @@ h1{font-size:18px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
 .tier-strong{background:#fff;color:var(--ink-2);border-color:var(--line-strong)}
 .tier-rising{background:var(--surface-2);color:var(--muted)}
 .nw{white-space:nowrap}
+.sub{color:var(--muted);font-weight:400;white-space:nowrap}
+.legacy-note{display:block;margin:0;font-size:12px;font-weight:400;color:var(--muted)}
 .vlist:has(+ .cands){padding-bottom:0;margin-bottom:0}
 #tablist[hidden]{display:none}
 .yt-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff;max-width:100%}
@@ -181,7 +184,8 @@ main{padding:12px 0 48px}
 .line{font-size:13px;color:var(--ink-2);margin:4px 0 10px}
 #yt-list.vlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;align-items:start}
 @media (max-width:600px){
-  .wrap{padding-left:max(16px, env(safe-area-inset-left));padding-right:max(16px, env(safe-area-inset-right))}
+  :root{--pad:16px}
+  .wrap{padding-left:max(var(--pad), env(safe-area-inset-left));padding-right:max(var(--pad), env(safe-area-inset-right))}
   .top-row{flex-wrap:wrap}
   .top-actions{width:100%;justify-content:flex-start}
   #yt-list.vlist{display:grid;grid-template-columns:1fr;gap:16px;align-items:stretch}
@@ -190,6 +194,9 @@ main{padding:12px 0 48px}
   .yt-card .yt-still{width:100%;aspect-ratio:16/9}
   .yt-card .tile-actions{margin:8px 0 0}
   .cands .seg button{min-height:40px}
+  .sortchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-inline:calc(-1 * var(--pad));padding-inline:var(--pad);min-width:0;width:calc(100% + 2 * var(--pad));max-width:calc(100% + 2 * var(--pad))}
+  .sortchips::-webkit-scrollbar{display:none}
+  .sortchips button{flex:none}
 }
 @media (max-width:899px){
   .f-toggle{display:flex;justify-content:space-between;gap:8px;align-items:center}

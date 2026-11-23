@@ -147,7 +147,15 @@ function noteBlock(key, note) {
 function igMultiple(item) {
   const text = multiple(item.multiplier);
   if (!text) return "";
-  return item.multiplier_basis === "median" ? text.replace(/x$/, "× median") : text;
+  if (item.legacy_mean) return text.replace(/x$/, "× mean");
+  return text.replace(/x$/, "× median");
+}
+function baselineHtml(item) {
+  if (item.median_views == null || item.sample_n == null) return "";
+  if (item.mean_views != null && (item.why || item.rank != null)) {
+    return `<p>Median ${esc(compact(item.median_views))} across ${esc(item.sample_n)} Reels <span class="sub">· mean ${esc(compact(item.mean_views))}</span></p>`;
+  }
+  return `<p>Median ${esc(compact(item.median_views))} · n ${esc(item.sample_n)}</p>`;
 }
 function tierBadge(tier) {
   const labels = { top10: "Top 10", strong: "Strong", rising: "Rising" };
@@ -187,7 +195,7 @@ function detail(item, platform) {
   const twist = item.ai_twist ? `<section class="adapt"><span class="label">AI twist</span><p>${esc(item.ai_twist)}</p></section>` : "";
   const mult = platform === "ig" ? igMultiple(item) : multiple(item.multiplier);
   const multHtml = mult ? ` · <b>${esc(mult)}${platform === "yt" ? " median" : ""}</b>` : "";
-  return `<article><h2>${esc(item.title || "Untitled")}</h2><p class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.views))} views · ${esc(when(item.published))}${multHtml}</p>${actions(item, platform)}<p class="label">Hook</p><p class="big">${esc(item.hook || "No hook recorded.")}</p>${item.why ? `<p>${esc(item.why)}</p>` : ""}${twist}</article>`;
+  return `<article><h2>${esc(item.title || "Untitled")}</h2><p class="meta">${esc(item.creator || item.channel || "")} · ${esc(compact(item.views))} views · ${esc(when(item.published))}${multHtml}</p>${platform === "ig" ? baselineHtml(item) : ""}${actions(item, platform)}<p class="label">Hook</p><p class="big">${esc(item.hook || "No hook recorded.")}</p>${item.why ? `<p>${esc(item.why)}</p>` : ""}${twist}</article>`;
 }
 function renderPicks() {
   const picks = state.data.ig.picks;
@@ -196,7 +204,11 @@ function renderPicks() {
   const segs = [["all", `All ${picks.length}`], ["previous", `Previous ${state.data.ig.history.reduce((n, group) => n + group.picks.length, 0)}`], ["fresh", `Recent ${fresh.length}`], ["bench", `Benchmarks ${bench}`]];
   let body = "";
   if (state.igSeg === "previous") {
-    body = state.data.ig.history.map((group) => `<section><p class="hint">${esc(group.label)} · Retired ${esc(group.retired_on)}</p><div class="list">${group.picks.map((item, index) => igCard(item, index)).join("")}</div></section>`).join("");
+    body = state.data.ig.history.map((group) => {
+      const legacy = !(group.picks || []).some((item) => item.multiplier_basis === "median");
+      const note = legacy ? `<span class="legacy-note">Scored on mean, before Nov 18.</span>` : "";
+      return `<section><p class="hint">${esc(group.label)} · Retired ${esc(group.retired_on)}${note}</p><div class="list">${group.picks.map((item, index) => igCard({ ...item, legacy_mean: legacy }, index)).join("")}</div></section>`;
+    }).join("");
   } else {
     const list = picks.filter((item) => {
       const days = daysOf(item.published) ?? 999;
