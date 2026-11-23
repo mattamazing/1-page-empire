@@ -24,9 +24,19 @@
     }
     return new Intl.DateTimeFormat("en-US", opts).format(d);
   }
-  function fmtX(x, median) {
+  function fmtX(x, basis) {
     if (x == null || Number.isNaN(Number(x))) return "—";
-    return Number(x).toFixed(2) + (median ? "× median" : "×");
+    const n = Number(x).toFixed(2);
+    if (basis === "mean") return n + "× mean";
+    if (basis === true || basis === "median") return n + "× median";
+    return n + "×";
+  }
+  function multipleBasis(rec, scope) {
+    if (scope === "history" && rec.legacyMean) return "mean";
+    return "median";
+  }
+  function baselineLine(medianViews, mean, n) {
+    return "Median " + esc(fmtCompact(medianViews)) + " across " + esc(R.fmtInt(n)) + ' Reels <span class="sub">· mean ' + esc(fmtCompact(mean)) + "</span>";
   }
   function tierBadge(tier) {
     const labels = { top10: "Top 10", strong: "Strong", rising: "Rising" };
@@ -255,7 +265,7 @@
     return '<li class="tile"><button type="button" class="tile-main vcard rail-item" data-rank="' + (rec.rank == null ? "" : rec.rank) + '" data-id="' + esc(rec.code || "") + '" data-open="' + open + '" aria-current="' + current + '">' +
       posterHTML(rec.poster, candCard ? null : rec.rank) +
       '<span class="tile-copy"><span class="v-title">' + esc(preview) + '</span><span class="v-meta">' + (candCard ? tierBadge(rec.tier) + " " : "") +
-      '<span class="nw">@' + esc(rec.handle) + " · " + esc(fmtStamp(rec.published, false)) + '</span><span class="xfig"><b>' + fmtX(rec.x, !historyCard && rec.median) + '</b></span> ' +
+      '<span class="nw">@' + esc(rec.handle) + " · " + esc(fmtStamp(rec.published, false)) + '</span><span class="xfig"><b>' + fmtX(rec.x, multipleBasis(rec, scope)) + '</b></span> ' +
       pill(rc.key === "fresh" ? "p-fresh" : "p-bench", rc.short) +
       (rec.paid ? pill("p-paid", "Paid") : "") +
       (saved ? pill("p-fresh", "Saved") : "") + (watched ? pill("p-neutral", "Watched") : "") +
@@ -275,14 +285,14 @@
     const pickLabel = rec.rank == null ? "" : '<p class="label">Pick ' + rec.rank + "</p>";
     return '<article class="detail">' + pickLabel + "<h2>" + esc(R.pickPreview(rec)) + "</h2>" +
       "<p class=\"v-meta\">@" + esc(rec.handle) + " · " + esc(fmtStamp(rec.published, true)) +
-      ' <span class="xfig"><b>' + fmtX(rec.x, rec.median) + "</b>" + (rec.median ? "" : "<span>own avg</span>") + "</span></p>" +
+      ' <span class="xfig"><b>' + fmtX(rec.x, rec.legacyMean ? "mean" : "median") + "</b></span></p>" +
       detailActions(rec.url, rec.code) +
       '<section class="adapt"><span class="label">Your adaptation, a draft idea, not a quote</span><p class="big">' + esc(rec.adapt || "Not recorded for this pick.") + "</p></section>" +
       "<h3>Why it's worth modeling</h3><p>" + esc(rec.why || "Not recorded.") + "</p>" +
       "<h3>How it opens</h3><dl class=\"hooks\">" + line("Spoken", spoken) + line("On-screen", onScreen) + line("Visual", visual) + "</dl>" +
       rec.cautions.map((c) => '<div class="caution ' + (c.kind === "paid" ? "c-paid" : "c-warn") + '">' + pill(c.kind === "paid" ? "p-paid" : "p-warn", c.kind === "paid" ? "Commercial" : "Caution") + "<p>" + esc(c.text) + "</p></div>").join("") +
       "<details><summary class=\"label\">Performance evidence</summary><p>" + esc(R.fmtInt(rec.views)) + " views, measured " + esc(fmtStamp(rec.views_asof, true)) +
-      ". Mean " + esc(R.fmtInt(rec.mean)) + " across " + esc(R.fmtInt(rec.n)) + " Reels (" + esc(rec.baselineLabel) + "). Followers " + esc(R.fmtInt(rec.followers)) +
+      ". " + baselineLine(rec.medianViews, rec.mean, rec.n) + " (" + esc(rec.baselineLabel) + "). Followers " + esc(R.fmtInt(rec.followers)) +
       ", measured " + esc(fmtStamp(rec.followers_asof, true)) + ". The multiple did not set the rank.</p></details></article>";
   }
 
@@ -323,7 +333,9 @@
         const picks = set.picks.filter((rec) => !(recState.hideWatched && Store.has("watched", rec.code)));
         if (!picks.length) return "";
         const when = retiredLabel(set.retiredAt || set.retiredOn);
-        return '<li class="history-set"><p class="set-label">' + esc(set.label) + (when ? " · " + esc(when) : "") + '</p><ol class="vlist">' +
+        const legacy = set.picks.some((rec) => rec.legacyMean);
+        return '<li class="history-set"><p class="set-label">' + esc(set.label) + (when ? " · " + esc(when) : "") +
+          (legacy ? '<span class="legacy-note">Scored on mean, before Nov 18.</span>' : "") + '</p><ol class="vlist">' +
           picks.map((rec) => pickCard(rec, "history")).join("") + "</ol></li>";
       }).join("");
       $("#rail").className = "vlist history";
@@ -375,16 +387,16 @@
     return '<div class="tile"><button type="button" class="tile-main vcard" data-open="explore" data-id="' + esc(id) + '">' +
       posterHTML(row.poster) +
       '<span class="tile-copy"><span class="v-title">' + (row.caption ? esc(row.caption) : '<span class="missing">No caption recorded.</span>') + "</span>" +
-      '<span class="v-meta">@' + esc(row.handle) + " · " + esc(fmtStamp(row.published, false)) + ' · <span class="xfig"><b>' + fmtX(row.x) + "</b></span>" +
+      '<span class="v-meta"><span class="nw">@' + esc(row.handle) + " · " + esc(fmtStamp(row.published, false)) + '</span><span class="xfig"><b>' + fmtX(row.x) + "</b></span>" +
       (row.flags.includes("paid") ? pill("p-paid", "Paid") : "") +
       (Store.has("saved", id) ? pill("p-fresh", "Saved") : "") + "</span></span></button>" + faceActions(row.url, id) + "</div>";
   }
   function exploreDetail(row) {
     const id = row.code || row.url;
     return '<article class="detail"><p class="label">Caption, not a spoken hook</p><h2>' + esc(row.caption || "No caption text recorded.") + "</h2>" +
-      "<p class=\"v-meta\">@" + esc(row.handle) + " · " + esc(fmtStamp(row.published, true)) + ' <span class="xfig"><b>' + fmtX(row.x) + "</b><span>own avg</span></span></p>" +
+      "<p class=\"v-meta\">@" + esc(row.handle) + " · " + esc(fmtStamp(row.published, true)) + ' <span class="xfig"><b>' + fmtX(row.x, "median") + "</b></span></p>" +
       detailActions(row.url, id) +
-      "<p>" + esc(R.fmtInt(row.views)) + " views. Mean " + esc(R.fmtInt(row.mean)) + " · n " + esc(R.fmtInt(row.n)) + ". Followers " + esc(R.fmtInt(row.followers)) + ".</p>" +
+      "<p>" + esc(R.fmtInt(row.views)) + " views. Median " + esc(R.fmtInt(row.medianViews)) + " · n " + esc(R.fmtInt(row.n)) + ". Followers " + esc(R.fmtInt(row.followers)) + ".</p>" +
       "<p class=\"hint\">This text is the caption. It has not been checked against the video.</p></article>";
   }
 
@@ -715,12 +727,12 @@
       "<div><dt>Not verified</dt><dd>" + esc(R.fmtInt(review.candidate_unverified || 0)) + "</dd></div>" +
       "<div><dt>Baselines</dt><dd>" + esc(String(VM.baselines.length)) + "</dd></div>" +
       "<div><dt>Reels scored</dt><dd>" + esc(R.fmtInt(facts.scoredReels)) + "</dd></div></dl>" +
-      "<p class=\"hint\">Missing view counts stay out of the mean. They are not zeros. The groups are different lists and are not forced to match.</p></details>";
+      "<p class=\"hint\">Missing view counts so a few viral hits don't skew the baseline. They are not zeros. The groups are different lists and are not forced to match.</p></details>";
   }
 
   function renderMethod() {
     const blocks = [
-      ["The multiple", "<p>Views divided by that creator's own 90-day mean, including this Reel. Creators are not ranked against each other. Cross-niche cards have no multiple.</p>"],
+      ["The multiple", "<p>Views divided by that creator's own 90-day median, including this Reel. Creators are not ranked against each other. Cross-niche cards have no multiple.</p>"],
       ["What a hook is", "<p>On picks, spoken, on-screen, and visual lines stay separate. A caption is never shown as speech. On inspiration cards, a caption track is labeled Caption track; audio unverified.</p>"],
       ["Strong only", "<p>Hides anything other than a complete 90-day baseline, and Reels flagged under 3 days. The 12 Reels in 90 days rule is separate.</p>"],
       ["Marks", "<p>" + esc(storageLine()) + "</p>"]
@@ -788,7 +800,7 @@
     $("#exp-creator").innerHTML = '<option value="">All creators</option>' + creators.map((name) => '<option value="' + esc(name) + '">@' + esc(name) + "</option>").join("");
     const topics = [...new Set(VM.reels.flatMap((row) => row.topics || []))].sort();
     $("#exp-topic").innerHTML = '<option value="">All topics</option>' + topics.map((topic) => '<option value="' + esc(topic) + '">' + esc(R.topicLabel(topic)) + "</option>").join("");
-    const sorts = [["x", "Outlier"], ["views", "Views"], ["followers", "Followers"], ["mean", "Mean"], ["n", "Sample"], ["published", "Published"]];
+    const sorts = [["x", "Outlier"], ["views", "Views"], ["followers", "Followers"], ["median", "Median"], ["n", "Sample"], ["published", "Published"]];
     $("#m-sort").innerHTML = sorts.flatMap(([key, label]) => [
       '<option value="' + key + ':desc">' + label + ", high</option>",
       '<option value="' + key + ':asc">' + label + ", low</option>"

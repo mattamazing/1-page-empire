@@ -441,6 +441,7 @@
       followers: numberOrNull(row.followers),
       views: numberOrNull(row.views),
       mean: numberOrNull(row.meanViews),
+      medianViews: numberOrNull(row.medianViews != null ? row.medianViews : row.medianViews90d),
       n: numberOrNull(row.n),
       published: row.publishLocal || null,
       publishedMs: Date.parse(row.publishLocal),
@@ -466,6 +467,7 @@
   function toRec(item, scored, buildIso) {
     const x = scored ? numberOrNull(scored.outlierX) : numberOrNull(item.outlierX);
     const mean = scored ? numberOrNull(scored.meanViews) : numberOrNull(item.mean90d);
+    const medianViews = numberOrNull(item.medianViews90d != null ? item.medianViews90d : (scored && (scored.medianViews != null ? scored.medianViews : scored.medianViews90d)));
     const views = scored ? numberOrNull(scored.views) : numberOrNull(item.views);
     const n = scored ? numberOrNull(scored.n) : numberOrNull(item.n90d);
     const followers = scored ? numberOrNull(scored.followers) : numberOrNull(item.followers);
@@ -481,6 +483,7 @@
       x: x,
       views: views,
       mean: mean,
+      medianViews: medianViews,
       n: n,
       followers: followers,
       views_asof: item.viewsAsOf || null,
@@ -838,7 +841,13 @@
         retiredOn: set.retired_on || null,
         retiredAt: set.retired_at_ct || null,
         picks: (set.picks || [])
-          .map(function (item) { return toRec(item, null, buildIso); })
+          .map(function (item) {
+            const rec = toRec(item, null, buildIso);
+            const legacy = !(set.picks || []).some(function (pick) { return pick.multiplierBasis === "median"; });
+            rec.legacyMean = legacy;
+            if (legacy) rec.median = false;
+            return rec;
+          })
           .sort(function (a, b) { return a.rank - b.rank; })
       };
     }).filter(function (set) { return set.picks.length; });
@@ -900,7 +909,7 @@
       if (key === "x") return row.x;
       if (key === "views") return row.views;
       if (key === "followers") return row.followers;
-      if (key === "mean") return row.mean;
+      if (key === "mean" || key === "median") return row.medianViews;
       if (key === "n") return row.n;
       if (key === "published") return row.publishedMs;
       return null;
