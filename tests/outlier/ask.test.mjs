@@ -4,7 +4,7 @@ import { gzipSync } from "node:zlib";
 import { useMockBlobs, request, cookieFrom } from "./mock-blobs.mjs";
 import { hashPassword, openStore } from "../../netlify/functions/outlier-lib.mjs";
 import auth from "../../netlify/functions/outlier-auth.mjs";
-import ask, { buildAskContext, estimateTokens, resetAskCache, askContextBudget } from "../../netlify/functions/outlier-ask.mjs";
+import ask, { buildAskContext, estimateTokens, resetAskCache, askContextBudget, parseYoutubeRss, findYoutubeIds, loadRecentUploads } from "../../netlify/functions/outlier-ask.mjs";
 
 const cheap = { n: 1024, r: 8, p: 1 };
 const originalFetch = globalThis.fetch;
@@ -52,7 +52,10 @@ test("ask streams a suggestion, stores the thread, and stays off the swipe store
   await openStore("outlier-swipe").setJSON("pack1", { id: "pack1", email: "ada@example.com", video_id: "abcdefghijk", title: "Saved packaging", url: "https://www.youtube.com/watch?v=abcdefghijk" });
   process.env.ANTHROPIC_API_KEY = "secret-key-value";
   let seenKey = "";
-  globalThis.fetch = async (_url, init) => {
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (href.includes("feeds/videos.xml")) return new Response("<feed></feed>", { status: 200 });
+    if (href.includes("oembed")) return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
     seenKey = init.headers["x-api-key"];
     const body = JSON.parse(init.body);
     assert.equal(body.model, "claude-sonnet-4-6");
@@ -111,4 +114,73 @@ test("ask context stays inside the token budget", () => {
   const text = buildAskContext({ yt: { mine: [], peers, broad: peers, big: peers }, ig: { picks: [], candidates: [], shortlist: [] } }, []);
   assert.ok(estimateTokens(text) <= askContextBudget());
   assert.match(text, /YouTube peers/);
+});
+
+const sampleRss = `<?xml version="1.0"?>
+<feed>
+  <entry>
+    <yt:videoId>oldervideo1</yt:videoId>
+    <title>Older upload</title>
+    <published>2026-11-01T00:00:00+00:00</published>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=oldervideo1"/>
+    <media:description>Short.</media:description>
+  </entry>
+  <entry>
+    <yt:videoId>grok1111111</yt:videoId>
+    <title>You're not late (yet): Learn 97% of Grok Bot in 11 minutes</title>
+    <published>2026-11-24T12:00:00+00:00</published>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=grok1111111"/>
+    <media:description><![CDATA[${"Learn Grok. ".repeat(80)}]]></media:description>
+  </entry>
+</feed>`;
+
+test("rss parsing keeps the newest upload and the first 600 description characters", () => {
+  const videos = parseYoutubeRss(sampleRss);
+  assert.equal(videos[0].id, "grok1111111");
+  assert.match(videos[0].title, /Learn 97% of Grok Bot/);
+  assert.equal(videos[0].url, "https://www.youtube.com/watch?v=grok1111111");
+  assert.equal(videos[0].description.length, 600);
+  assert.equal(videos[1].id, "oldervideo1");
+});
+
+test("retrieval surfaces a learn-in-minutes peer for a learn-Grok question", () => {
+  const text = buildAskContext({
+    yt: {
+      mine: [{ id: "matt1", channel: "Matt Clark", title: "How I hit $1M/mo with one offer", multiplier: 40, url: "https://www.youtube.com/watch?v=matt1video1" }],
+      peers: [
+        { id: "peerclaude1", channel: "Other Creator", title: "Learn 90% of Claude Video Editing in under 20 Minutes", multiplier: 6, url: "https://www.youtube.com/watch?v=peerclaude1" },
+        { id: "peer2", channel: "Other Creator", title: "Anthropic Just Shipped Claude 2.0 (Master it in 17 minutes)", multiplier: 5, url: "https://www.youtube.com/watch?v=peer2video1" },
+        { id: "peer3", channel: "Other Creator", title: "My morning routine for ecommerce", multiplier: 30, url: "https://www.youtube.com/watch?v=peer3video1" },
+      ],
+      broad: [],
+      big: [],
+    },
+    ig: { picks: [], candidates: [], shortlist: [] },
+  }, [], { question: "Give me title ideas for learning Grok in 11 minutes" });
+  const relevant = text.split("MOST RELEVANT OUTLIERS FOR THIS QUESTION")[1].split("YouTube mine")[0];
+  assert.match(relevant, /Learn 90% of Claude Video Editing in under 20 Minutes/);
+  assert.ok(relevant.indexOf("Learn 90%") < relevant.indexOf("morning routine") || !relevant.includes("morning routine"));
+  assert.equal(relevant.includes("How I hit $1M/mo"), false);
+});
+
+test("youtube url detection accepts watch, youtu.be, and shorts links", () => {
+  assert.deepEqual(findYoutubeIds("watch https://www.youtube.com/watch?v=abcdefghijk&t=3s"), ["abcdefghijk"]);
+  assert.deepEqual(findYoutubeIds("https://youtu.be/bbbbbbbbbbb"), ["bbbbbbbbbbb"]);
+  assert.deepEqual(findYoutubeIds("https://www.youtube.com/shorts/ccccccccccc"), ["ccccccccccc"]);
+  assert.deepEqual(findYoutubeIds("no link here"), []);
+});
+
+test("rss fail-soft returns an empty list and then keeps the last good feed", async () => {
+  resetAskCache();
+  globalThis.fetch = async () => { throw new Error("down"); };
+  assert.deepEqual(await loadRecentUploads(), []);
+  globalThis.fetch = async () => new Response(sampleRss, { status: 200 });
+  const loaded = await loadRecentUploads();
+  assert.equal(loaded[0].id, "grok1111111");
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; throw new Error("down"); };
+  const again = await loadRecentUploads();
+  assert.equal(calls, 0);
+  assert.equal(again[0].id, "grok1111111");
+  globalThis.fetch = originalFetch;
 });
