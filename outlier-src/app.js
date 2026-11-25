@@ -18,6 +18,7 @@ const state = {
   packTag: "all",
   editing: "",
   candTier: "all",
+  ask: { messages: [], loaded: false, streaming: false, draft: "", stick: true, ctrl: null },
 };
 
 function esc(value) {
@@ -310,6 +311,206 @@ function renderAdmin() {
   const rows = state.users.map((user) => `<div class="admin-row"><div><b>${esc(user.name || user.email)}</b><div class="hint">${esc(user.email)} · ${esc(user.role)}${user.disabled ? " · off" : ""}</div></div><button class="btn" data-role="${esc(user.email)}" data-next="${user.role === "admin" ? "member" : "admin"}">${user.role === "admin" ? "Make member" : "Make admin"}</button><button class="btn" data-disable="${esc(user.email)}" data-off="${user.disabled ? "0" : "1"}">${user.disabled ? "Enable" : "Disable"}</button><button class="btn" data-reset="${esc(user.email)}">Reset password</button><button class="btn" data-del="${esc(user.email)}">Delete</button></div>`).join("");
   return `<div class="view-head"><h2>People</h2></div><form id="add-user" class="panel-card"><h2>Add user</h2><label>Email<input class="input" name="email" type="email" required></label><label>Name<input class="input" name="name" required></label><label>Role<select class="select" name="role"><option value="member">Member</option><option value="admin">Admin</option></select></label><label>Initial password<input class="input" name="password" type="text" required></label><button class="btn btn-primary" type="submit">Add</button><p id="admin-msg" class="err" hidden></p></form><div>${rows}</div>`;
 }
+const ASK_PROMPTS = [
+  "10 title ideas for a Claude Code video",
+  "Best Reel hooks this month",
+  "What packaging patterns are winning in peers?",
+  "Which thumbnails are outperforming in my niche?",
+];
+function measureTop() {
+  const top = document.querySelector(".top");
+  if (!top) return;
+  const header = Math.round(top.getBoundingClientRect().height);
+  let keyboard = 0;
+  if (window.visualViewport) {
+    keyboard = Math.max(0, Math.round(window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop));
+  }
+  document.documentElement.style.setProperty("--top-h", `${header}px`);
+  document.documentElement.style.setProperty("--kb", `${keyboard}px`);
+}
+function parseAnswer(raw) {
+  const parts = [];
+  const re = /```suggestion\s*([\s\S]*?)```/g;
+  let last = 0;
+  let match;
+  while ((match = re.exec(raw))) {
+    const prose = raw.slice(last, match.index).trim();
+    if (prose) parts.push({ type: "text", text: prose });
+    try {
+      const data = JSON.parse(match[1]);
+      if (data && data.title) {
+        parts.push({
+          type: "suggestion",
+          title: String(data.title),
+          reason: String(data.reason || ""),
+          sources: (Array.isArray(data.sources) ? data.sources : []).slice(0, 3).map((id) => String(id)),
+        });
+      }
+    } catch { /* a closed fence that is not JSON stays out of the card */ }
+    last = match.index + match[0].length;
+  }
+  const rest = raw.slice(last);
+  const open = rest.indexOf("```suggestion");
+  const visible = open === -1 ? rest : rest.slice(0, open);
+  if (visible.trim()) parts.push({ type: "text", text: visible.trim() });
+  return parts;
+}
+function proseHtml(text) {
+  return String(text).split(/\n{2,}/).map((block) => {
+    const lines = block.split("\n");
+    if (lines.length && lines.every((line) => /^\s*[-*]\s+/.test(line))) {
+      return `<ul>${lines.map((line) => `<li>${esc(line.replace(/^\s*[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+    }
+    return `<p>${esc(block).replace(/\n/g, "<br>")}</p>`;
+  }).join("");
+}
+function sourceChip(id) {
+  const ig = state.data ? findItem("ig", id) : null;
+  const item = ig || (state.data ? findItem("yt", id) : null);
+  const platform = ig ? "ig" : "yt";
+  if (!item) return `<span class="src src-missing">${esc(id)}</span>`;
+  const legacy = item.legacy_mean || item.multiplier_basis === "mean";
+  const mult = multiple(item.multiplier);
+  const mark = mult ? `${mult.replace(/x$/, "×")}${legacy ? " mean" : ""}` : "";
+  const name = item.creator || item.channel || item.id || "";
+  const letter = esc((name || "?")[0].toUpperCase());
+  const thumb = item.poster
+    ? `<img alt="" src="${esc(item.poster)}" width="24" height="24" data-letter="${letter}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'src-ph',textContent:this.dataset.letter}))">`
+    : `<span class="src-ph">${letter}</span>`;
+  return `<a class="src" href="${esc(item.url || "#")}" data-ask-src data-id="${esc(item.id)}" data-platform="${platform}">${thumb}<span class="src-name">${platform === "ig" ? "@" : ""}${esc(name)}</span>${mark ? `<span class="src-x">${esc(mark)}</span>` : ""}</a>`;
+}
+function suggestionHtml(card) {
+  const sources = (card.sources || []).slice(0, 3).map(sourceChip).join("");
+  return `<article class="sugg"><div class="sugg-copy"><p class="sugg-title">${esc(card.title)}</p>${card.reason ? `<p class="sugg-reason">${esc(card.reason)}</p>` : ""}</div><div class="sugg-actions"><button class="icon-btn" type="button" data-ask-copy="${esc(card.title)}" aria-label="Copy suggestion"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 15V6.5A1.5 1.5 0 0 1 7.5 5H15" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>${sources ? `<div class="src-row">${sources}</div>` : ""}</article>`;
+}
+function askTurns() {
+  return state.ask.messages.map((message, index) => {
+    if (message.role === "user") return `<div class="ask-turn"><p class="ask-user">${esc(message.content)}</p></div>`;
+    const parts = parseAnswer(message.content || "");
+    const body = parts.map((part) => part.type === "suggestion" ? suggestionHtml(part) : proseHtml(part.text)).join("");
+    const pending = message.pending && !message.content ? `<div class="ask-skel" aria-hidden="true"><span class="sk sk-line a"></span><span class="sk sk-line b"></span><span class="sk sk-line c"></span></div>` : body;
+    const errorText = message.error && String(message.error).includes("60 questions") ? message.error : "Couldn't get an answer.";
+    const error = message.error ? `<div class="ask-err" role="alert"><span>${esc(errorText)}</span><button class="btn ask-retry" type="button" data-ask-retry="${index}">Retry</button></div>` : "";
+    return `<div class="ask-turn ask-assistant">${pending}${error}</div>`;
+  }).join("");
+}
+function renderAsk() {
+  const empty = !state.ask.messages.length && !state.ask.streaming;
+  const prompts = ASK_PROMPTS.map((prompt) => `<button class="chip" type="button" data-prompt="${esc(prompt)}">${esc(prompt)}</button>`).join("");
+  const list = empty
+    ? `<div class="ask-empty"><h3>Ask about what's working</h3><p>Answers cite the outliers they're based on.</p><div class="ask-prompts">${prompts}</div></div>`
+    : askTurns();
+  const sendDisabled = state.ask.streaming || !state.ask.draft.trim();
+  const icon = state.ask.streaming
+    ? `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 18V6M6.5 11.5 12 6l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<section class="ask"><div class="view-head"><div><h2>Ask</h2><p class="hint ask-hint">Answers use your Outlier Research data · YouTube + Reels</p></div><button class="btn btn-compact" id="ask-new" type="button" ${empty || state.ask.streaming ? "disabled" : ""}><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>New chat</span></button></div><div class="ask-list" id="ask-list">${list}</div><form class="ask-composer" id="ask-form"><div class="ask-field"><textarea id="ask-input" rows="1" maxlength="4000" placeholder="Ask about titles, hooks, packaging…" aria-label="Ask">${esc(state.ask.draft)}</textarea><button class="ask-send" type="${state.ask.streaming ? "button" : "submit"}" data-ask-stop="${state.ask.streaming ? "1" : ""}" ${sendDisabled && !state.ask.streaming ? "disabled" : ""} aria-label="${state.ask.streaming ? "Stop" : "Send"}">${icon}</button></div><p id="ask-live" class="sr-only" aria-live="polite"></p></form></section>`;
+}
+function paintAskList() {
+  const list = $("#ask-list");
+  if (!list) return;
+  const gap = list.scrollHeight - list.scrollTop - list.clientHeight;
+  if (gap > 80) state.ask.stick = false;
+  const empty = !state.ask.messages.length && !state.ask.streaming;
+  list.innerHTML = empty
+    ? `<div class="ask-empty"><h3>Ask about what's working</h3><p>Answers cite the outliers they're based on.</p><div class="ask-prompts">${ASK_PROMPTS.map((prompt) => `<button class="chip" type="button" data-prompt="${esc(prompt)}">${esc(prompt)}</button>`).join("")}</div></div>`
+    : askTurns();
+  if (state.ask.stick) list.scrollTop = list.scrollHeight;
+}
+function bindAsk() {
+  const list = $("#ask-list");
+  const input = $("#ask-input");
+  if (list) {
+    list.addEventListener("scroll", () => {
+      const gap = list.scrollHeight - list.scrollTop - list.clientHeight;
+      state.ask.stick = gap < 80;
+    });
+    if (state.ask.stick) list.scrollTop = list.scrollHeight;
+  }
+  if (input) {
+    const grow = () => {
+      if (!input.value) { input.style.height = ""; return; }
+      input.style.height = "auto";
+      input.style.height = `${Math.min(input.scrollHeight, 132)}px`;
+    };
+    grow();
+  }
+  measureTop();
+}
+async function loadAsk() {
+  state.ask.loaded = true;
+  try {
+    const payload = await api("/outlier/api/ask");
+    state.ask.messages = payload.messages || [];
+  } catch {
+    state.ask.messages = [];
+  }
+  if (location.hash === "#ask") render();
+}
+async function askSend(text, options = {}) {
+  const message = String(text == null ? state.ask.draft : text).trim();
+  if (!message || state.ask.streaming) return;
+  state.ask.draft = "";
+  if (!options.reuse) state.ask.messages.push({ role: "user", content: message });
+  state.ask.messages.push({ role: "assistant", content: "", pending: true });
+  state.ask.streaming = true;
+  state.ask.stick = true;
+  render();
+  const assistant = state.ask.messages[state.ask.messages.length - 1];
+  const ctrl = new AbortController();
+  state.ask.ctrl = ctrl;
+  try {
+    const response = await fetch("/outlier/api/ask", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message }),
+      signal: ctrl.signal,
+    });
+    if (response.status === 429) {
+      const payload = await response.json().catch(() => ({}));
+      assistant.pending = false;
+      assistant.error = payload.error || "You've used today's 60 questions. Ask again tomorrow.";
+      return;
+    }
+    if (!response.ok || !response.body) {
+      assistant.pending = false;
+      assistant.error = "Couldn't get an answer.";
+      return;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() || "";
+      for (const chunk of chunks) {
+        const line = chunk.split("\n").find((item) => item.startsWith("data:"));
+        if (!line) continue;
+        let event;
+        try { event = JSON.parse(line.slice(5).trim()); } catch { continue; }
+        if (event.t === "d") {
+          assistant.content += event.text || "";
+          assistant.pending = false;
+          paintAskList();
+        } else if (event.t === "err") {
+          assistant.error = "Couldn't get an answer.";
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") assistant.error = "Couldn't get an answer.";
+    if (!assistant.content && error.name === "AbortError") state.ask.messages.pop();
+  } finally {
+    assistant.pending = false;
+    state.ask.streaming = false;
+    state.ask.ctrl = null;
+    if (location.hash === "#ask") render();
+  }
+}
 function render() {
   const main = $("#main");
   $("#built-line").textContent = state.data ? updatedLine().split(" | ")[0].replace("Updated ", "Built ") : "Built …";
@@ -318,14 +519,30 @@ function render() {
   if (who) who.textContent = `${state.me.name || state.me.email} · ${state.me.role}`;
   const adminBtn = $("#admin-btn");
   if (adminBtn) adminBtn.hidden = state.me.role !== "admin";
-  $("#plat-ig").setAttribute("aria-pressed", String(state.platform === "ig" && location.hash !== "#saved" && location.hash !== "#admin"));
-  $("#plat-yt").setAttribute("aria-pressed", String(state.platform === "yt" && location.hash !== "#saved" && location.hash !== "#admin"));
+  const askMode = location.hash === "#ask";
+  const blocked = location.hash === "#saved" || location.hash === "#admin" || askMode;
+  $("#plat-ig").setAttribute("aria-pressed", String(state.platform === "ig" && !blocked));
+  $("#plat-yt").setAttribute("aria-pressed", String(state.platform === "yt" && !blocked));
   $("#saved-btn").setAttribute("aria-pressed", String(location.hash === "#saved"));
+  const askBtn = $("#ask-btn");
+  if (askBtn) {
+    if (askMode) askBtn.setAttribute("aria-current", "page");
+    else askBtn.removeAttribute("aria-current");
+  }
   if ($("#admin-btn")) $("#admin-btn").setAttribute("aria-pressed", String(location.hash === "#admin"));
   const savedMode = location.hash === "#saved";
   const adminMode = location.hash === "#admin";
-  $("#ig-nav").hidden = state.platform !== "ig" || savedMode || adminMode;
-  main.setAttribute("aria-busy", state.data ? "false" : "true");
+  const platform = $(".platform");
+  if (platform) platform.hidden = askMode;
+  $("#ig-nav").hidden = askMode || state.platform !== "ig" || savedMode || adminMode;
+  measureTop();
+  main.setAttribute("aria-busy", !askMode && !state.data ? "true" : "false");
+  if (askMode) {
+    main.innerHTML = renderAsk();
+    bindAsk();
+    if (!state.ask.loaded) loadAsk();
+    return;
+  }
   if (!state.data) { main.innerHTML = skeleton(); return; }
   if (adminMode) { main.innerHTML = renderAdmin(); return; }
   if (savedMode) { main.innerHTML = renderSaved(); return; }
@@ -468,11 +685,52 @@ $("#account-btn").addEventListener("click", () => {
   openSheet(`<h2>Account</h2><p class="who" id="who">${esc(state.me.name || state.me.email)} · ${esc(state.me.role)}</p><form id="pw-form"><label>Current<input class="input" name="current" type="password" autocomplete="current-password"></label><label>New<input class="input" name="next" type="password" autocomplete="new-password"></label><button class="btn" type="submit">Change password</button><p id="pw-msg" class="hint"></p></form>${admin}<button class="btn" id="logout-btn" type="button">Log out</button>`);
 });
 $("#saved-btn").addEventListener("click", () => { location.hash = "#saved"; });
-$("#plat-ig").addEventListener("click", () => { state.platform = "ig"; if (location.hash === "#saved" || location.hash === "#admin") location.hash = "#picks"; else render(); });
-$("#plat-yt").addEventListener("click", () => { state.platform = "yt"; if (location.hash === "#saved" || location.hash === "#admin") location.hash = "#youtube"; else { location.hash = "#youtube"; render(); } });
+$("#ask-btn").addEventListener("click", () => { location.hash = "#ask"; });
+$("#plat-ig").addEventListener("click", () => { state.platform = "ig"; if (location.hash === "#saved" || location.hash === "#admin" || location.hash === "#ask") location.hash = "#picks"; else render(); });
+$("#plat-yt").addEventListener("click", () => { state.platform = "yt"; if (location.hash === "#saved" || location.hash === "#admin" || location.hash === "#ask") location.hash = "#youtube"; else { location.hash = "#youtube"; render(); } });
 window.addEventListener("hashchange", render);
 document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-close]")) { closeSheet(); return; }
+  const prompt = event.target.closest("[data-prompt]");
+  if (prompt) { askSend(prompt.dataset.prompt); return; }
+  if (event.target.closest("#ask-new")) {
+    if (state.ask.streaming || !state.ask.messages.length) return;
+    state.ask.messages = [];
+    state.ask.draft = "";
+    render();
+    api("/outlier/api/ask", { method: "DELETE" }).catch(() => {});
+    return;
+  }
+  const retry = event.target.closest("[data-ask-retry]");
+  if (retry) {
+    const index = Number(retry.dataset.askRetry);
+    const prior = [...state.ask.messages.slice(0, index)].reverse().find((item) => item.role === "user");
+    if (state.ask.messages[index]) state.ask.messages.splice(index, 1);
+    if (prior) askSend(prior.content, { reuse: true });
+    return;
+  }
+  const copy = event.target.closest("[data-ask-copy]");
+  if (copy) {
+    const text = copy.dataset.askCopy || "";
+    try { await navigator.clipboard.writeText(text); } catch { /* the button still confirms */ }
+    copy.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    copy.classList.add("is-copied");
+    const live = $("#ask-live");
+    if (live) live.textContent = "Copied";
+    setTimeout(() => { if (location.hash === "#ask") render(); }, 1500);
+    return;
+  }
+  if (event.target.closest("[data-ask-stop]")) {
+    if (state.ask.ctrl) state.ask.ctrl.abort();
+    return;
+  }
+  const src = event.target.closest("[data-ask-src]");
+  if (src) {
+    event.preventDefault();
+    const item = findItem(src.dataset.platform, src.dataset.id);
+    if (item) openSheet(detail(item, src.dataset.platform));
+    return;
+  }
   const ig = event.target.closest("[data-ig]");
   if (ig) { state.ig = ig.dataset.ig; state.platform = "ig"; location.hash = "#picks"; render(); return; }
   const seg = event.target.closest("[data-seg]");
@@ -595,7 +853,33 @@ document.addEventListener("click", async (event) => {
     catch (error) { alert(error.message); }
   }
 });
+document.addEventListener("keydown", (event) => {
+  if (event.target.id !== "ask-input") return;
+  const hover = window.matchMedia("(hover:hover)").matches;
+  if (event.key === "Enter" && hover && !event.shiftKey) {
+    event.preventDefault();
+    askSend();
+  }
+});
+document.addEventListener("input", (event) => {
+  if (event.target.id !== "ask-input") return;
+  state.ask.draft = event.target.value;
+  if (!event.target.value) event.target.style.height = "";
+  else {
+    event.target.style.height = "auto";
+    event.target.style.height = `${Math.min(event.target.scrollHeight, 132)}px`;
+  }
+  const send = $(".ask-send");
+  if (send && !state.ask.streaming) send.disabled = !state.ask.draft.trim();
+});
+window.addEventListener("resize", measureTop);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", measureTop);
 document.addEventListener("submit", async (event) => {
+  if (event.target.id === "ask-form") {
+    event.preventDefault();
+    askSend();
+    return;
+  }
   if (event.target.id === "add-user") {
     event.preventDefault();
     const form = new FormData(event.target);
