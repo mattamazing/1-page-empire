@@ -11,6 +11,7 @@ import version from "../netlify/functions/outlier-data-version.mjs";
 import image from "../netlify/functions/outlier-img.mjs";
 import saves from "../netlify/functions/outlier-saves.mjs";
 import swipe from "../netlify/functions/outlier-swipe.mjs";
+import ask from "../netlify/functions/outlier-ask.mjs";
 import admin from "../netlify/functions/outlier-admin.mjs";
 
 const root = new URL("../outlier/", import.meta.url);
@@ -25,6 +26,7 @@ const routes = [
   ["/outlier/api/data", data],
   ["/outlier/api/saves", saves],
   ["/outlier/api/swipe", swipe],
+  ["/outlier/api/ask", ask],
   ["/outlier/api/admin/users", admin],
 ];
 
@@ -82,7 +84,14 @@ const server = createServer(async (req, res) => {
     const request = new Request(url, { method: req.method, headers, body: body.length ? body : undefined });
     const response = await route(request, { ip: "127.0.0.1" });
     res.writeHead(response.status, Object.fromEntries(response.headers));
-    res.end(Buffer.from(await response.arrayBuffer()));
+    if (!response.body) { res.end(); return; }
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
     return;
   }
   let path = decodeURIComponent(url.pathname);
